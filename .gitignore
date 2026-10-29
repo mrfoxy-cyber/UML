@@ -2,12 +2,32 @@
 .vscode/*
 !.vscode/tasks.json
 node_modules/
+# Local caches and downloaded repository contents
 .cache/
+snapshots/
+*.blob
 test-results/
 bin/
 obj/
 *.user
 *.suo
+# Local credentials (the app normally stores tokens in Windows Credential Manager)
 .env
 .env.*
 !.env.example
+.token
+.tokens/
+*.token
+*.pat
+token.json
+tokens.json
+credentials.json
+.credentials
+.credentials.*
+.credentials/
+secrets.json
+.secrets
+.secrets.*
+.secrets/
+github-token.*
+github_token.*

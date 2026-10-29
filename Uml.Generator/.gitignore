@@ -1,9 +1,34 @@
 bin/
 obj/
 .vs/
+# Snapshots and analysis caches stay on this computer
 .cache/
+snapshots/
+*.blob
 TestResults/
+# Generated reports and diagram drafts
 output/*
 !output/README.md
 *.user
 *.suo
+
+# Local credentials; never commit real values in .env.example
+.env
+.env.*
+!.env.example
+.token
+.tokens/
+*.token
+*.pat
+token.json
+tokens.json
+credentials.json
+.credentials
+.credentials.*
+.credentials/
+secrets.json
+.secrets
+.secrets.*
+.secrets/
+github-token.*
+github_token.*
