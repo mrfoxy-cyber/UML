@@ -34,7 +34,7 @@
         const arrowY=y+labelLines.length*18+14;
         const points=self?[{x:from,y:arrowY},{x:from+66,y:arrowY},{x:from+66,y:arrowY+30},{x:from,y:arrowY+30}]:[{x:from,y:arrowY},{x:to,y:arrowY}];
         const labelX=self?Math.min(width-labelWidth-30,from+14):Math.min(width-labelWidth-26,Math.max(24,(from+to-labelWidth)/2));
-        edges.push({id:'message:'+step.id,source:step.from,target:step.to,kind:step.kind,label:step.label,labelLines,labelBox:{x:labelX,y:y-2,width:labelWidth,height:labelLines.length*18+12},points,message,messages:[message]});
+        edges.push({id:'message:'+step.id,source:step.from,target:step.to,kind:step.kind,label:step.label,labelLines,labelBox:{x:labelX,y:y-2,width:labelWidth,height:labelLines.length*18+12},points,message,messages:[message],context:step.role==='context'});
         y=arrowY+(self?60:34);
       }
     }

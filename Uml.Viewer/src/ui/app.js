@@ -26,6 +26,7 @@
     $('document-name').textContent=session.data.title;$('file-name').textContent=session.filename;$('view-count').textContent=session.data.views.length;
     $('view-title').textContent=view.title;$('type-label').textContent=U.Contract.TYPES[view.type].toUpperCase();$('origin-label').textContent=session.example?'EXAMPLE':'YOUR JSON';
     $('view-id').textContent=view.id;
+    const badges=$('usecase-badges');badges.replaceChildren();const useCases=new Set([...(view.useCases||[]),...(view.tests||[]).flatMap(id=>session.data.tests[id]?.useCases||[])]);for(const id of useCases){const item=session.data.useCases[id],badge=html('span','usecase-badge',item.name);badge.title=id+(item.actor?' · '+item.actor:'');badges.append(badge);}
     const testIds=new Set(diagramTestItems().flatMap(([,item])=>item.tests||[]));$('tests-button').textContent='Tests · '+testIds.size;
     $('view-subtitle').textContent=({class:'Explore classes, their details and the relationships between them.',aggregation:'See the whole, its parts and the connections that bring them together.',component:'Follow dependencies across the building blocks of a system.',sequence:'Follow a conversation, one message at a time.',communication:'A different perspective on the same shared interaction.',activity:'Follow actions and decisions, connected to the same classes and operations.'})[view.type];
     $('state-badge').textContent=session.example?'Example · version 1':'Local file · version 1';$('source-code').textContent=session.raw;
@@ -57,6 +58,7 @@
     scene=result;world.style.width=scene.width+'px';world.style.height=scene.height+'px';
     U.Painter.draw(document,{groups:$('groups-layer'),nodes:$('nodes-layer'),edges:$('edges-layer')},scene,{toggle,inspect,selectObject,selectNode});
     highlight();
+    $('context-button').hidden=!scene.nodes.some(n=>n.context)&&!scene.edges.some(e=>e.context);contextUI();
     $('view-caption').textContent=scene.caption;$('notice').hidden=!scene.notice;$('notice').textContent=scene.notice||'';$('canvas-empty').hidden=scene.nodes.length>0;
     $('element-count').textContent=scene.interaction?`${scene.nodes.length} participants · ${scene.interaction.messages.length} messages`:`${scene.nodes.length} elements · ${scene.edges.length} connections`;
     const legend=$('mini-legend');legend.replaceChildren();
@@ -67,7 +69,7 @@
   async function loadText(raw,filename='document.json',example=false,ticket,project=null){
     const token=ticket??++importTicket;
     try{
-      const data=U.Contract.parse(raw),candidate={data,raw,filename,example,project,states:new Map(),navOpen:new Set([data.views[0].type]),index:U.Connectivity.index(data)},selected=data.views[0];
+      const data=U.Contract.parse(raw),candidate={data,raw,filename,example,project,contextVisible:true,states:new Map(),navOpen:new Set([data.views[0].type]),index:U.Connectivity.index(data)},selected=data.views[0];
       if(!elk)throw new Error('The local layout library is missing. Keep the vendor folder alongside index.html.');
       status.textContent='Arranging your diagram…';
       const result=await U.Renderers.get(selected.type).build(data,selected,context(candidate,selected));
@@ -165,6 +167,7 @@
       const test=session.data.tests[id],entry=html('article','test-reference');entry.dataset.testId=id;
       const name=html(test.url?'a':'strong','test-name',test.name);if(test.url){name.href=test.url;name.target='_blank';name.rel='noopener noreferrer';}entry.append(name,html('small','',(test.kind?test.kind+' · ':'')+id));
       if(test.file)entry.append(html('code','test-file',test.file));if(test.symbol)entry.append(html('code','test-symbol',test.symbol));if(test.notes)entry.append(html('p','',test.notes));section.append(entry);
+      for(const useCase of test.useCases||[])entry.append(html('span','usecase-badge',session.data.useCases[useCase].name));
     }
     section.append(html('small','test-note','Linked references · not test results'));container.append(section);
   }
@@ -179,6 +182,7 @@
     selection=null;highlight();
     const panel=$('inspector-content');panel.replaceChildren();$('inspector').hidden=false;panel.append(html('h3','',node.item.name));
     renderTests(panel,node.item);
+    detailButton(panel,node.item);
     if(node.item.notes)panel.append(html('p','',node.item.notes));referenceButtons(panel,node.item.references);
     if(!node.item.references?.length)panel.append(html('p','', 'No shared object references on this step. Add references in JSON to connect it.'));
   }
@@ -213,6 +217,7 @@
       if(value.label)item.append(html('code','',value.label));
       if(value.guards?.length)item.append(html('p','',value.guards.map(g=>'['+g+']').join(' AND ')));
       item.append(html('small','',value.id));renderTests(item,value);referenceButtons(item,value.references);
+      if(value.phase)item.append(html('small','', 'Test phase: '+value.phase));detailButton(item,value);
       if(value.parents){const sequence=session.data.views.find(v=>v.type==='sequence'&&v.interaction===view.interaction);if(sequence){const button=html('button','secondary-button','View in sequence →');button.type='button';button.addEventListener('click',async()=>{
         const occurrence=session.index.occurrences.find(o=>o.viewId===sequence.id&&o.kind==='message'&&o.localId===value.id);
         if(occurrence)await navigateTo(occurrence.key,value.references?.[0]);centerEdge(value.id);
@@ -221,6 +226,8 @@
     }
   }
   function centerNode(node){const b=bounds(),panel=$('inspector'),pr=panel.hidden?null:panel.getBoundingClientRect?.(),vr=viewport.getBoundingClientRect();const width=pr&&pr.left<vr.right?Math.max(240,Math.min(b.width,pr.left-vr.left-24)):b.width;camera.zoom=1;camera.x=width/2-(node.x+node.width/2);camera.y=b.height/2-(node.y+node.height/2);fitted=false;transform();}
+  function detailButton(container,item){if(!item.detailView)return;const button=html('button','reference-link','Explore implementation →');button.type='button';button.dataset.detailView=item.detailView;button.addEventListener('click',async()=>{const reference=item.references?.[0],matches=session.index.occurrences.filter(o=>o.viewId===item.detailView),target=matches.find(o=>o.kind==='message'&&o.references.includes(reference))||matches.find(o=>o.references.includes(reference))||matches[0];if(target)await navigateTo(target.key,reference);});container.append(button);}
+  function contextUI(){if(!session)return;world.classList.toggle('hide-context',!session.contextVisible);$('context-button').textContent=session.contextVisible?'Context: shown':'Context: hidden';$('context-button').setAttribute('aria-pressed',String(session.contextVisible));}
   function centerEdge(id){const edge=scene?.edges.find(e=>e.message?.id===id);if(!edge)return;const b=edge.labelBox;centerNode(b||{...edge.points[0],width:1,height:1});const group=$('edges-layer').querySelector(`[data-edge-id="message:${id}"]`);group?.classList.add('is-selected');}
   async function focus(query=$('element-search').value){
     if(!session||!query.trim())return;const candidate=session,selected=view,needle=query.trim().toLocaleLowerCase();
@@ -247,6 +254,7 @@
   document.addEventListener('drop',event=>{event.preventDefault();dragDepth=0;$('drop-overlay').hidden=true;const files=[...event.dataTransfer?.files||[]];if(files.length!==1){error(new Error('Drop one JSON document at a time.'));return;}loadFile(files[0]);});
   $('diagram-tab').addEventListener('click',()=>setMode('diagram'));$('json-tab').addEventListener('click',()=>setMode('source'));
   $('tests-button').addEventListener('click',inspectDiagramTests);
+  $('context-button').addEventListener('click',()=>{if(session){session.contextVisible=!session.contextVisible;contextUI();}});
   $('back-button').addEventListener('click',()=>back());
   $('zoom-in').addEventListener('click',()=>zoom(camera.zoom*1.2));$('zoom-out').addEventListener('click',()=>zoom(camera.zoom/1.2));$('fit-button').addEventListener('click',()=>fit());$('actual-button').addEventListener('click',()=>zoom(1));
   $('reset-button').addEventListener('click',()=>{if(!session)return;currentState().open.clear();currentState().reveal.clear();$('element-search').value='';render({resetCamera:true});});

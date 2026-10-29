@@ -30,7 +30,7 @@
       const text=svg(document,'text',{x:label.x,y:label.y+13,class:'guard-label'});label.lines.forEach((line,i)=>{const span=svg(document,'tspan',{x:label.x,dy:i?17:0});span.textContent=line;text.append(span);});edges.append(text);
     }
     for(const edge of scene.edges){
-      const group=svg(document,'g',{class:'edge-group',tabindex:0,role:'button','aria-label':edge.kind+': '+(edge.label||edge.id)});
+      const group=svg(document,'g',{class:'edge-group'+(edge.context?' is-context':''),tabindex:0,role:'button','aria-label':edge.kind+': '+(edge.label||edge.id)});
       group.dataset.edgeId=edge.id;
       const d=edge.points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ');
       const attributes={d,class:'edge-line kind-'+edge.kind};
@@ -47,7 +47,7 @@
       group.addEventListener('click',()=>actions.inspect(edge));group.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)){event.preventDefault();actions.inspect(edge);}});edges.append(group);
     }
     for(const node of scene.nodes){
-      const p=node.presentation,card=html(document,'article','uml-node node-'+node.kind+(p.open?' is-open':'')+(node.emphasis?' is-whole':''));card.dataset.nodeId=node.id;
+      const p=node.presentation,card=html(document,'article','uml-node node-'+node.kind+(p.open?' is-open':'')+(node.emphasis?' is-whole':'')+(node.context?' is-context':''));card.dataset.nodeId=node.id;
       Object.assign(card.style,{left:node.x+'px',top:node.y+'px',width:node.width+'px',height:node.height+'px'});
       if(['decision','merge'].includes(node.kind)){const shape=svg(document,'svg',{viewBox:'0 0 260 170',class:'decision-shape','aria-hidden':true});shape.append(svg(document,'polygon',{points:'130,2 258,85 130,168 2,85'}));card.append(shape);}
       const header=html(document,'button','node-header');header.type='button';header.disabled=!p.collapsible;header.style.height=node.headerHeight+'px';header.setAttribute('aria-label',(p.open?'Collapse ':'Expand ')+p.name);header.setAttribute('aria-expanded',String(p.open));

@@ -1,0 +1,6 @@
+# Design example: patterns are relative to the repository snapshot.
+bin/
+obj/
+.vs/
+**/*.g.cs
+**/*.generated.cs

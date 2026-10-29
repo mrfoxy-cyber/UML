@@ -1,0 +1,9 @@
+bin/
+obj/
+.vs/
+.cache/
+TestResults/
+output/*
+!output/README.md
+*.user
+*.suo

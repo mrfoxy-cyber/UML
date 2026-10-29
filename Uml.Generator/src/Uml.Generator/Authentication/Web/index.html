@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connect GitHub · UML Generator</title>
+  <link rel="stylesheet" href="login.css">
+  <script src="login.js" defer></script>
+</head>
+<body>
+  <main>
+    <section class="intro">
+      <a class="brand" href="/" aria-label="UML Generator home"><span class="mark">U</span> UML <span>Generator</span></a>
+      <div class="intro-copy">
+        <p class="eyebrow">YOUR CODE, UNDERSTOOD</p>
+        <h1>A clear view.<br>A careful connection.</h1>
+        <p class="lead">Connect a repository to create diagrams from an exact version of your code.</p>
+        <div class="flow" aria-label="Repository to diagram workflow"><span>Repository</span><i>→</i><span>Snapshot</span><i>→</i><span>Diagrams</span></div>
+      </div>
+      <p class="aside-note">The generator reads repository data through GitHub. Your local project stays untouched.</p>
+    </section>
+    <section class="setup">
+      <div class="card">
+        <span class="badge">READ-ONLY SETUP</span>
+        <h2>Connect GitHub</h2>
+        <p class="description">A dedicated connection for the repository you want to understand.</p>
+        <div class="repository"><span class="repo-icon" aria-hidden="true">⌘</span><div><small>SELECTED REPOSITORY</small><strong id="repository">Loading…</strong></div><span class="dot" id="dot"></span></div>
+        <div class="step"><span class="number">1</span><div><h3>Create a fine-grained token</h3><p>On GitHub, choose <b>Only select repositories</b> and select this repository. Keep these permissions read-only:</p><div class="permissions"><span>Contents · Read</span><span>Pull requests · Read</span><span>Metadata · Read</span></div><a class="button secondary disabled" id="create" target="_blank" rel="noopener noreferrer">Create token on GitHub <span aria-hidden="true">↗</span></a></div></div>
+        <div class="step"><span class="number">2</span><div><h3>Connect securely</h3><p>Paste the token into the <b>password field of the Windows prompt</b>. After verification, it is saved in Windows Credential Manager.</p><button class="button primary" id="connect" disabled>Connect securely <span aria-hidden="true">→</span></button></div></div>
+        <div class="status" id="status" role="status" aria-live="polite">Preparing your connection…</div>
+        <button class="disconnect" id="disconnect" hidden>Remove saved connection</button>
+        <p class="fine-print">The token never enters this page. The connection check verifies your GitHub identity and repository visibility; permissions are set on GitHub.</p>
+      </div>
+      <p class="return-note">Once connected, return to your terminal and run your snapshot command.</p>
+    </section>
+  </main>
+</body>
+</html>

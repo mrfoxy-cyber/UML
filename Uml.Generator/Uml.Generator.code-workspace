@@ -1,0 +1,9 @@
+{
+  "folders": [
+    { "name": "UML Generator", "path": "." }
+  ],
+  "settings": {
+    "files.associations": { ".uml": "json", ".umlignore": "ignore" },
+    "files.exclude": { "**/bin": true, "**/obj": true, "**/.cache": true }
+  }
+}

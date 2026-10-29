@@ -37,6 +37,40 @@
       "maxProperties": 150,
       "minProperties": 1
     },
+    "useCases": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "notes": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 6000
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "maxProperties": 100
+    },
     "tests": {
       "oneOf": [
         {
@@ -167,6 +201,30 @@
                 "uniqueItems": true
               }
             ]
+          },
+          "useCases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "maxItems": 30,
+            "minItems": 0,
+            "uniqueItems": true
+          },
+          "contextElements": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "maxItems": 200,
+            "minItems": 0,
+            "uniqueItems": true
           }
         },
         "required": [
@@ -298,6 +356,18 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 6000
+        },
+        "useCases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "maxItems": 30,
+          "minItems": 0,
+          "uniqueItems": true
         }
       },
       "required": [
@@ -617,6 +687,26 @@
                   "uniqueItems": true
                 }
               ]
+            },
+            "role": {
+              "enum": [
+                "focus",
+                "context"
+              ]
+            },
+            "phase": {
+              "enum": [
+                "setup",
+                "action",
+                "assertion",
+                "context"
+              ]
+            },
+            "detailView": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+              "minLength": 1,
+              "maxLength": 120
             }
           },
           "required": [
@@ -808,6 +898,18 @@
               "uniqueItems": true
             }
           ]
+        },
+        "role": {
+          "enum": [
+            "focus",
+            "context"
+          ]
+        },
+        "detailView": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+          "minLength": 1,
+          "maxLength": 120
         }
       },
       "required": [

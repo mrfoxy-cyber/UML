@@ -2,8 +2,8 @@
   'use strict';const U=root.UmlViewer;
   U.Renderers.register('activity',{async build(document,view,context){
     const activity=document.activities[view.activity];
-    const nodes=activity.nodes.map(item=>{const presentation=U.Model.presentation(item,item.id,context.state);if(item.kind!=='action'){presentation.collapsible=false;presentation.show=new Set(['name']);}return {id:item.id,sourceId:item.id,item,kind:item.kind,presentation};});
-    const edges=activity.flows.map(flow=>({...flow,id:'flow:'+flow.id,kind:'flow',source:flow.from,target:flow.to,label:flow.guard?'['+flow.guard+']':'',originals:[flow]}));
+    const nodes=activity.nodes.map(item=>{const presentation=U.Model.presentation(item,item.id,context.state);if(item.kind!=='action'){presentation.collapsible=false;presentation.show=new Set(['name']);}return {id:item.id,sourceId:item.id,item,kind:item.kind,presentation,context:item.role==='context'};});
+    const edges=activity.flows.map(flow=>({...flow,id:'flow:'+flow.id,kind:'flow',source:flow.from,target:flow.to,label:flow.guard?'['+flow.guard+']':'',originals:[flow],context:activity.nodes.some(n=>[flow.from,flow.to].includes(n.id)&&n.role==='context')}));
     const scene=await U.GraphLayout({nodes,edges,groups:[]},context,{direction:'DOWN',nodeGap:64,layerGap:66});
     // ELK routes to rectangular bounds; trim symbol endpoints to their actual outlines.
     const byId=new Map(scene.nodes.map(n=>[n.id,n]));

@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "id": "garage",
+  "name": "Garage diagrams",
+  "source": {
+    "provider": "github",
+    "repository": "mrfoxy-cyber/Garage-v2",
+    "revision": { "kind": "branch", "name": "main" }
+  },
+  "sources": {
+    "include": ["Garage/**/*.cs", "Vehicle/**/*.cs"],
+    "tests": ["Garage.Tests/**/*.cs"]
+  },
+  "output": "../../output/garage",
+  "ignoreFile": ".umlignore",
+  "analysis": {
+    "compilations": [
+      {
+        "id": "vehicle", "include": ["Vehicle/**/*.cs"], "references": [],
+        "languageVersion": "14", "defines": [], "nullable": "enable",
+        "globalUsings": ["System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks"]
+      },
+      {
+        "id": "garage", "include": ["Garage/**/*.cs"], "references": ["vehicle"],
+        "languageVersion": "14", "defines": [], "nullable": "enable",
+        "globalUsings": ["System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks"]
+      },
+      {
+        "id": "garage-tests", "include": ["Garage.Tests/**/*.cs"], "references": ["garage", "vehicle"],
+        "languageVersion": "14", "defines": [], "nullable": "enable",
+        "globalUsings": ["System", "System.Collections.Generic", "System.IO", "System.Linq", "System.Net.Http", "System.Threading", "System.Threading.Tasks"]
+      }
+    ]
+  },
+  "diagrams": [
+    {
+      "id": "garage-classes",
+      "type": "class",
+      "title": "Garage classes"
+    }
+  ]
+}

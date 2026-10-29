@@ -14,13 +14,13 @@
     walk(source.steps);return {...source,id,messages,fragments};
   }
   function structural(document,view,state){
-    const selected=new Set(view.elements),nodes=[],groups=[],redirect=new Map();
+    const selected=new Set(view.elements),context=new Set(view.contextElements||[]),nodes=[],groups=[],redirect=new Map();
     const elementGroups=new Map();
     for(const group of document.groups||[]){
       const members=group.members.filter(id=>selected.has(id));if(!members.length)continue;
       const key='group:'+group.id,p=presentation(group,key,state,'group');
       if(!p.open||!p.show.has('members')){
-        nodes.push({id:key,sourceId:group.id,item:group,kind:'collapsed-group',presentation:p,count:members.length,memberNames:members.map(id=>document.elements[id].name),groupId:null});
+        nodes.push({id:key,sourceId:group.id,item:group,kind:'collapsed-group',presentation:p,count:members.length,memberNames:members.map(id=>document.elements[id].name),groupId:null,context:members.every(id=>context.has(id))});
         members.forEach(id=>redirect.set(id,key));
       }else{
         groups.push({id:'frame:'+group.id,sourceId:group.id,key,item:group,presentation:p,count:members.length});
@@ -28,7 +28,7 @@
       }
     }
     for(const id of view.elements)if(!redirect.has(id)){
-      const item=document.elements[id];nodes.push({id,sourceId:id,item,kind:item.kind,presentation:presentation(item,id,state),groupId:elementGroups.get(id)||null});
+      const item=document.elements[id];nodes.push({id,sourceId:id,item,kind:item.kind,presentation:presentation(item,id,state),groupId:elementGroups.get(id)||null,context:context.has(id)});
     }
     const edges=[],summaries=new Map();
     for(const relation of document.relationships||[]){
@@ -37,7 +37,7 @@
       const from=redirect.get(relation.from)||relation.from,to=redirect.get(relation.to)||relation.to;
       if(from===to&&redirect.has(relation.from))continue;
       const proxy=from!==relation.from||to!==relation.to;
-      const edge={...relation,source:from,target:to,originals:[relation],proxy};
+      const edge={...relation,source:from,target:to,originals:[relation],proxy,context:context.has(relation.from)||context.has(relation.to)};
       if(proxy){const key=from+'|'+to+'|'+relation.kind;if(summaries.has(key))summaries.get(key).originals.push(relation);else{summaries.set(key,edge);edges.push(edge);}}
       else edges.push(edge);
     }

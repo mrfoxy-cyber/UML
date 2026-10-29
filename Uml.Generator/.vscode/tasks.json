@@ -1,0 +1,47 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Generator: Build",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "Uml.Generator.sln", "-m:1"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Generator: Tests",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["test", "Uml.Generator.sln", "-m:1"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Generator: Connect GitHub",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "src/Uml.Generator", "--", "login", "--config", "projects/garage/.uml"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Generator: Analyze Garage from GitHub",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "src/Uml.Generator", "--", "analyze", "--config", "projects/garage/.uml"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Generator: Snapshot Garage from GitHub",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "src/Uml.Generator", "--", "snapshot", "--config", "projects/garage/.uml"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}

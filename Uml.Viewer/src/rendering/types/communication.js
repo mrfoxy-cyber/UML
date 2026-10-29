@@ -14,7 +14,7 @@
       node.messages=interaction.messages.filter(m=>sources.includes(m.from)).map(m=>`${m.number}  ${m.kind}: ${m.label} → ${document.elements[m.to].name}${m.guards.length?' ['+m.guards.join(' · ')+']':''}`);
       if(node.kind!=='collapsed-group')node.count=node.messages.length;
     }
-    for(const edge of data.edges)edge.messages=edge.originals.flatMap(o=>o.messages||[]);
+    for(const edge of data.edges){edge.messages=edge.originals.flatMap(o=>o.messages||[]);edge.context=edge.messages.every(m=>m.role==='context');}
     const scene=await U.GraphLayout(data,context,{direction:'RIGHT',nodeGap:72,layerGap:120});
     return {...scene,interaction,caption:'The same interaction, arranged around its collaborators. Open a participant for numbered outgoing messages; select a connection to inspect calls, replies and guards.',legend:[['call','Calls'],['reply','Replies']]};
   }});

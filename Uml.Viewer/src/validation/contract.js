@@ -15,21 +15,21 @@
   const display=object({initial:{enum:['collapsed','expanded']},collapsible:{type:'boolean'},collapsed:state,expanded:state});
   const references={...array(ID,30),uniqueItems:true};
   const tests={oneOf:[{type:'null'},{...array(ID,100),uniqueItems:true}]};
-  const testCase=object({name:text(240),kind:{enum:['suite','unit','integration','workflow']},file:text(1000),symbol:text(1000),url:text(2000),notes:text(6000)},['name']);
+  const testCase=object({name:text(240),kind:{enum:['suite','unit','integration','workflow']},file:text(1000),symbol:text(1000),url:text(2000),notes:text(6000),useCases:references},['name']);
   const member=object({id:ID,kind:{enum:['operation','attribute']},name:text(1600),notes:text(6000),tests},['id','kind','name']);
   const element=object({kind:{enum:ELEMENTS},name:text(240),members:array({oneOf:[text(1600),ref('member')]},200),references,notes:text(6000),display:ref('display'),tests},['kind','name']);
   const group=object({id:ID,name:text(240),members:{...ids,minItems:1},notes:text(6000),display:ref('display')},['id','name','members']);
   const relation=object({id:ID,kind:{enum:RELATIONS},from:ID,to:ID,label:text(500),fromMultiplicity:text(40),toMultiplicity:text(40),tests},['id','kind','from','to']);
-  const message=object({id:ID,kind:{enum:['call','reply']},from:ID,to:ID,label:text(1200),references,tests},['id','kind','from','to','label']);
+  const message=object({id:ID,kind:{enum:['call','reply']},from:ID,to:ID,label:text(1200),references,tests,role:{enum:['focus','context']},phase:{enum:['setup','action','assertion','context']},detailView:ID},['id','kind','from','to','label']);
   const alternative=object({id:ID,kind:{const:'alt'},name:text(240),display:ref('display'),branches:array(object({guard:text(500),steps:array(ref('step'),600)},['guard','steps']),8,2)},['id','kind','branches']);
   const interaction=object({story:ID,scenario:ID,participants:{...ids,minItems:1,maxItems:24},steps:array(ref('step'),600,1),tests},['participants','steps']);
   const dictionary=(values,max)=>({type:'object',propertyNames:ID,additionalProperties:values,maxProperties:max});
-  const activityNode=object({id:ID,kind:{enum:['initial','final','action','decision','merge']},name:text(240),notes:text(6000),references,display:ref('display'),tests},['id','kind','name']);
+  const activityNode=object({id:ID,kind:{enum:['initial','final','action','decision','merge']},name:text(240),notes:text(6000),references,display:ref('display'),tests,role:{enum:['focus','context']},detailView:ID},['id','kind','name']);
   const activity=object({nodes:array(ref('activityNode'),150,1),flows:array(object({id:ID,from:ID,to:ID,guard:text(500),tests},['id','from','to']),600),tests},['nodes','flows']);
   const schema={
     $schema:'https://json-schema.org/draft/2020-12/schema',
     $id:'urn:uml-json-viewer:document:1',title:'UML viewer document',
-    ...object({$schema:text(500),version:{const:1},id:ID,title:text(240),elements:{...dictionary(ref('element'),150),minProperties:1},tests:{oneOf:[{type:'null'},dictionary(ref('testCase'),600)]},groups:array(ref('group'),50),relationships:array(ref('relationship'),600),interactions:dictionary(ref('interaction'),12),activities:dictionary(ref('activity'),12),views:array(object({id:ID,type:{enum:SUPPORTED},title:text(240),elements:ids,interaction:ID,activity:ID,tests},['id','type','title']),30,1)},['version','id','title','elements','views']),
+    ...object({$schema:text(500),version:{const:1},id:ID,title:text(240),elements:{...dictionary(ref('element'),150),minProperties:1},useCases:dictionary(object({name:text(240),actor:text(240),notes:text(6000)},['name']),100),tests:{oneOf:[{type:'null'},dictionary(ref('testCase'),600)]},groups:array(ref('group'),50),relationships:array(ref('relationship'),600),interactions:dictionary(ref('interaction'),12),activities:dictionary(ref('activity'),12),views:array(object({id:ID,type:{enum:SUPPORTED},title:text(240),elements:ids,interaction:ID,activity:ID,tests,useCases:references,contextElements:ids},['id','type','title']),30,1)},['version','id','title','elements','views']),
     $defs:{display,testCase,member,element,group,relationship:relation,step:{oneOf:[message,alternative]},interaction,activityNode,activity}
   };
   class InputError extends Error {
@@ -102,6 +102,10 @@
     });
     check(document,schema);
     const testIds=new Set(Object.keys(document.tests||{}));
+    const useCaseIds=new Set(Object.keys(document.useCases||{})),viewIds=new Set(document.views.map(v=>v.id));
+    const checkUseCases=(item,path)=>{for(const [i,id] of (item.useCases||[]).entries())if(!useCaseIds.has(id))fail(`${path}.useCases[${i}]`,`Unknown use case "${id}".`);};
+    const checkDetail=(item,path)=>{if(item.detailView&&!viewIds.has(item.detailView))fail(path+'.detailView','Reference a detail diagram in this document/project.');};
+    for(const [id,test] of Object.entries(document.tests||{}))checkUseCases(test,'$.tests.'+id);
     const checkTests=(item,path)=>{for(const [i,id] of (item.tests||[]).entries())if(!testIds.has(id))fail(`${path}.tests[${i}]`,`Unknown test "${id}". Define it in the document test catalogue or use null.`);};
     for(const [id,test] of Object.entries(document.tests||{}))if(test.url){let url;try{url=new URL(test.url);}catch{fail('$.tests.'+id+'.url','Use an absolute HTTPS URL.');}if(url.protocol!=='https:')fail('$.tests.'+id+'.url','Use an absolute HTTPS URL.');}
     const elements=new Map(Object.entries(document.elements));
@@ -143,14 +147,14 @@
           const p=`${base}[${i}]`;if(++totalSteps>600)fail(p,'Maximum 600 interaction steps per document.');
           if(stepIds.has(step.id))fail(p+'.id',`Duplicate step ID "${step.id}" in this interaction.`);stepIds.add(step.id);
           if(step.kind==='alt'){displayFields(step.display,['name','count','steps','guards'],p+'.display');step.branches.forEach((b,j)=>steps(b.steps,`${p}.branches[${j}].steps`,depth+1));}
-          else {for(const end of ['from','to'])if(!participants.has(step[end]))fail(p+'.'+end,`"${step[end]}" is not a participant in this interaction.`);checkReferences(step,p);checkTests(step,p);}
+          else {for(const end of ['from','to'])if(!participants.has(step[end]))fail(p+'.'+end,`"${step[end]}" is not a participant in this interaction.`);checkReferences(step,p);checkTests(step,p);checkDetail(step,p);}
         });
       }
       steps(interaction.steps,path+'.steps');
     }
     let activityNodes=0,activityFlows=0;
     for(const [id,activity] of Object.entries(document.activities||{})){
-      const path='$.activities.'+id;checkTests(activity,path);activity.nodes.forEach((n,i)=>checkTests(n,`${path}.nodes[${i}]`));activity.flows.forEach((f,i)=>checkTests(f,`${path}.flows[${i}]`));unique(activity.nodes,path+'.nodes');unique(activity.flows,path+'.flows');
+      const path='$.activities.'+id;checkTests(activity,path);activity.nodes.forEach((n,i)=>{checkTests(n,`${path}.nodes[${i}]`);checkDetail(n,`${path}.nodes[${i}]`);});activity.flows.forEach((f,i)=>checkTests(f,`${path}.flows[${i}]`));unique(activity.nodes,path+'.nodes');unique(activity.flows,path+'.flows');
       activityNodes+=activity.nodes.length;activityFlows+=activity.flows.length;
       if(activityNodes>300||activityFlows>1200)fail(path,'Maximum 300 activity nodes and 1200 flows per document.');
       const nodes=new Map(activity.nodes.map(n=>[n.id,n]));
@@ -159,7 +163,8 @@
       for(const node of activity.nodes)if(node.kind==='decision'&&activity.flows.filter(f=>f.from===node.id).some(f=>!f.guard))fail(path+'.flows','Every outgoing decision flow needs a guard.');
     }
     document.views.forEach((view,i)=>{
-      const path=`$.views[${i}]`;checkTests(view,path);
+      const path=`$.views[${i}]`;checkTests(view,path);checkUseCases(view,path);
+      if(view.contextElements){if(!['class','component','aggregation'].includes(view.type))fail(path+'.contextElements','Only structural views declare contextElements.');for(const id of view.contextElements)if(!view.elements?.includes(id))fail(path+'.contextElements','Context elements must also be selected in elements.');}
       if(view.type==='activity'){
         if(!view.activity||!Object.hasOwn(document.activities||{},view.activity))fail(path+'.activity','Reference an activity defined in this document.');
         if(view.elements||view.interaction)fail(path,'Activity views select an activity, not elements or an interaction.');

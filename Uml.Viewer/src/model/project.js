@@ -13,7 +13,7 @@
       if(!files.has(path))fail(path,'Project file is missing. Select the whole project folder.');
       const raw=files.get(path),value=C.read(raw);C.check(value,{type:'object',additionalProperties:false,required,properties:allowed},path);sources.set(path,raw);return value;
     }
-    const p=C.schema.properties,model=read(manifest.model,{elements:p.elements,tests:p.tests,groups:p.groups,relationships:p.relationships},['elements']);
+    const p=C.schema.properties,model=read(manifest.model,{elements:p.elements,tests:p.tests,useCases:p.useCases,groups:p.groups,relationships:p.relationships},['elements']);
     const document={version:1,id:manifest.id,title:manifest.title,...model,interactions:{},activities:{},views:[]};
     const viewIds=new Set();
     for(const file of manifest.diagrams){
