@@ -1,6 +1,6 @@
 # Rendering architecture and visual quality
 
-Status: the shared core and five dedicated renderers are implemented. This document records the design and visual criteria; policies for other diagram types describe later scope. See `README.md` for running the viewer and tests.
+Status: the shared core and six dedicated renderers are implemented, including activity flows. The connectivity index resolves shared elements/members to scoped occurrences; the UI owns navigation history and temporary reveal states. Project manifests assemble a shared catalogue and diagram sources before normal validation/indexing. See `CONNECTED-VIEWS.md` for the contract and `README.md` for running the viewer.
 
 ## Decision
 

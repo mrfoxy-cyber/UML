@@ -15,7 +15,7 @@ Human-editable JSON diagrams with a standalone, offline UML viewer.
 | `Uml.Viewer/` | Implemented | Validate JSON, lay out and render diagrams, control named collapsed/expanded states. |
 | `Uml.Generator/` | Planned; not created yet | Extract code/story facts and produce JSON for human review and import. |
 
-The viewer currently renders class, aggregation, component, sequence and communication diagrams. JSON describes content and relationships; each diagram type has its own renderer over a shared drawing foundation. Sequence and communication views can share one interaction.
+The viewer currently renders class, aggregation, component, sequence, communication and activity diagrams. Stable shared IDs connect classes and methods to messages and actions across views. Use **Also appears in** to jump between them, and **Back** to return. Project folders can keep one shared model and several diagram files connected through `uml.project.json`.
 
 ## Development
 
@@ -37,6 +37,7 @@ VS Code associates example and accepted diagram files with the local JSON Schema
 
 - [Viewer instructions](Uml.Viewer/README.md)
 - [JSON format and collapse names](Uml.Viewer/JSON-FORMAT.md)
+- [Shared IDs, connected views and Garage examples](Uml.Viewer/CONNECTED-VIEWS.md)
 - [Project plan](Uml.Viewer/PROJECT-PLAN.md)
 - [Renderer architecture](Uml.Viewer/RENDERING-ARCHITECTURE.md)
 - [Supported diagram types](Uml.Viewer/DIAGRAM-TYPES.md)

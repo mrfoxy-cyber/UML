@@ -2,7 +2,7 @@
   'use strict';
   const U=root.UmlViewer ||= {};
   const TYPES={class:'Class diagram',aggregation:'Aggregation diagram',component:'Component diagram',sequence:'Sequence diagram',communication:'Communication diagram',object:'Object diagram',package:'Package diagram','composite-structure':'Composite structure diagram',deployment:'Deployment diagram',profile:'Profile diagram','use-case':'Use-case diagram',activity:'Activity diagram','state-machine':'State-machine diagram','interaction-overview':'Interaction overview diagram',timing:'Timing diagram'};
-  const SUPPORTED=['class','aggregation','component','sequence','communication'];
+  const SUPPORTED=['class','aggregation','component','sequence','communication','activity'];
   const ELEMENTS=['class','interface','enum','component','actor'];
   const RELATIONS=['dependency','association','inheritance','implementation','aggregation','composition'];
   const ID={type:'string',pattern:'^[A-Za-z][A-Za-z0-9._-]*$',minLength:1,maxLength:120};
@@ -13,18 +13,22 @@
   const ids={...array(ID,200),uniqueItems:true};
   const state=object({name:text(240),show:{...array({enum:['name','kind','members','notes','count','steps','guards']},7,1),uniqueItems:true}});
   const display=object({initial:{enum:['collapsed','expanded']},collapsible:{type:'boolean'},collapsed:state,expanded:state});
-  const element=object({kind:{enum:ELEMENTS},name:text(240),members:array(text(1600),200),notes:text(6000),display:ref('display')},['kind','name']);
+  const references={...array(ID,30),uniqueItems:true};
+  const member=object({id:ID,kind:{enum:['operation','attribute']},name:text(1600),notes:text(6000)},['id','kind','name']);
+  const element=object({kind:{enum:ELEMENTS},name:text(240),members:array({oneOf:[text(1600),ref('member')]},200),references,notes:text(6000),display:ref('display')},['kind','name']);
   const group=object({id:ID,name:text(240),members:{...ids,minItems:1},notes:text(6000),display:ref('display')},['id','name','members']);
   const relation=object({id:ID,kind:{enum:RELATIONS},from:ID,to:ID,label:text(500),fromMultiplicity:text(40),toMultiplicity:text(40)},['id','kind','from','to']);
-  const message=object({id:ID,kind:{enum:['call','reply']},from:ID,to:ID,label:text(1200)},['id','kind','from','to','label']);
+  const message=object({id:ID,kind:{enum:['call','reply']},from:ID,to:ID,label:text(1200),references},['id','kind','from','to','label']);
   const alternative=object({id:ID,kind:{const:'alt'},name:text(240),display:ref('display'),branches:array(object({guard:text(500),steps:array(ref('step'),600)},['guard','steps']),8,2)},['id','kind','branches']);
   const interaction=object({story:ID,scenario:ID,participants:{...ids,minItems:1,maxItems:24},steps:array(ref('step'),600,1)},['participants','steps']);
   const dictionary=(values,max)=>({type:'object',propertyNames:ID,additionalProperties:values,maxProperties:max});
+  const activityNode=object({id:ID,kind:{enum:['initial','final','action','decision','merge']},name:text(240),notes:text(6000),references,display:ref('display')},['id','kind','name']);
+  const activity=object({nodes:array(ref('activityNode'),150,1),flows:array(object({id:ID,from:ID,to:ID,guard:text(500)},['id','from','to']),600)},['nodes','flows']);
   const schema={
     $schema:'https://json-schema.org/draft/2020-12/schema',
     $id:'urn:uml-json-viewer:document:1',title:'UML viewer document',
-    ...object({$schema:text(500),version:{const:1},id:ID,title:text(240),elements:{...dictionary(ref('element'),150),minProperties:1},groups:array(ref('group'),50),relationships:array(ref('relationship'),600),interactions:dictionary(ref('interaction'),12),views:array(object({id:ID,type:{enum:SUPPORTED},title:text(240),elements:ids,interaction:ID},['id','type','title']),30,1)},['version','id','title','elements','views']),
-    $defs:{display,element,group,relationship:relation,step:{oneOf:[message,alternative]},interaction}
+    ...object({$schema:text(500),version:{const:1},id:ID,title:text(240),elements:{...dictionary(ref('element'),150),minProperties:1},groups:array(ref('group'),50),relationships:array(ref('relationship'),600),interactions:dictionary(ref('interaction'),12),activities:dictionary(ref('activity'),12),views:array(object({id:ID,type:{enum:SUPPORTED},title:text(240),elements:ids,interaction:ID,activity:ID},['id','type','title']),30,1)},['version','id','title','elements','views']),
+    $defs:{display,member,element,group,relationship:relation,step:{oneOf:[message,alternative]},interaction,activityNode,activity}
   };
   class InputError extends Error {
     constructor(path,message){super(message);this.name='InputError';this.path=path;}
@@ -55,7 +59,7 @@
     if(rule.$ref)return check(value,schema.$defs[rule.$ref.split('/').at(-1)],path);
     if(rule.oneOf){
       const matches=rule.oneOf.filter(candidate=>{try{check(value,candidate,path);return true;}catch{return false;}});
-      if(matches.length!==1)fail(path,'Expected a call/reply message or an alt block with guarded branches. Check its fields and step kind.');
+      if(matches.length!==1)fail(path,'Expected exactly one supported format. Check the fields and kind of this member or interaction step.');
       return;
     }
     if(Object.hasOwn(rule,'const')&&value!==rule.const)fail(path,`Expected ${JSON.stringify(rule.const)}.`);
@@ -96,6 +100,15 @@
     });
     check(document,schema);
     const elements=new Map(Object.entries(document.elements));
+    const shared=new Set(elements.keys());let memberCount=0;
+    for(const [owner,item] of elements)for(const [i,member] of (item.members||[]).entries())if(typeof member==='object'){
+      const path=`$.elements.${owner}.members[${i}]`;
+      if(++memberCount>600)fail(path,'Maximum 600 identified members per document.');
+      if(!['class','interface','enum'].includes(item.kind))fail(path,'Identified members belong to classes, interfaces or enums.');
+      if(shared.has(member.id))fail(path+'.id',`Duplicate shared ID "${member.id}".`);shared.add(member.id);
+    }
+    const checkReferences=(item,path)=>{for(const [i,id] of (item.references||[]).entries())if(!shared.has(id))fail(`${path}.references[${i}]`,`Unknown shared object "${id}".`);};
+    for(const [id,item] of elements)checkReferences(item,'$.elements.'+id);
     const exists=(id,path)=>{if(!elements.has(id))fail(path,`Unknown element "${id}".`);};
     const unique=(items,path)=>{const seen=new Set();items.forEach((item,i)=>{if(seen.has(item.id))fail(`${path}[${i}].id`,`Duplicate ID "${item.id}".`);seen.add(item.id);});};
     unique(document.views,'$.views');unique(document.groups||[],'$.groups');unique(document.relationships||[],'$.relationships');
@@ -124,17 +137,32 @@
           const p=`${base}[${i}]`;if(++totalSteps>600)fail(p,'Maximum 600 interaction steps per document.');
           if(stepIds.has(step.id))fail(p+'.id',`Duplicate step ID "${step.id}" in this interaction.`);stepIds.add(step.id);
           if(step.kind==='alt'){displayFields(step.display,['name','count','steps','guards'],p+'.display');step.branches.forEach((b,j)=>steps(b.steps,`${p}.branches[${j}].steps`,depth+1));}
-          else for(const end of ['from','to'])if(!participants.has(step[end]))fail(p+'.'+end,`"${step[end]}" is not a participant in this interaction.`);
+          else {for(const end of ['from','to'])if(!participants.has(step[end]))fail(p+'.'+end,`"${step[end]}" is not a participant in this interaction.`);checkReferences(step,p);}
         });
       }
       steps(interaction.steps,path+'.steps');
     }
+    let activityNodes=0,activityFlows=0;
+    for(const [id,activity] of Object.entries(document.activities||{})){
+      const path='$.activities.'+id;unique(activity.nodes,path+'.nodes');unique(activity.flows,path+'.flows');
+      activityNodes+=activity.nodes.length;activityFlows+=activity.flows.length;
+      if(activityNodes>300||activityFlows>1200)fail(path,'Maximum 300 activity nodes and 1200 flows per document.');
+      const nodes=new Map(activity.nodes.map(n=>[n.id,n]));
+      activity.nodes.forEach((node,i)=>{checkReferences(node,`${path}.nodes[${i}]`);displayFields(node.display,['name','kind','notes'],`${path}.nodes[${i}].display`);});
+      activity.flows.forEach((flow,i)=>{for(const end of ['from','to'])if(!nodes.has(flow[end]))fail(`${path}.flows[${i}].${end}`,`Unknown activity node "${flow[end]}".`);if(nodes.get(flow.from).kind==='final'||nodes.get(flow.to).kind==='initial')fail(`${path}.flows[${i}]`,'Final nodes have no outgoing flow; initial nodes have no incoming flow.');});
+      for(const node of activity.nodes)if(node.kind==='decision'&&activity.flows.filter(f=>f.from===node.id).some(f=>!f.guard))fail(path+'.flows','Every outgoing decision flow needs a guard.');
+    }
     document.views.forEach((view,i)=>{
       const path=`$.views[${i}]`;
-      if(['sequence','communication'].includes(view.type)){
+      if(view.type==='activity'){
+        if(!view.activity||!Object.hasOwn(document.activities||{},view.activity))fail(path+'.activity','Reference an activity defined in this document.');
+        if(view.elements||view.interaction)fail(path,'Activity views select an activity, not elements or an interaction.');
+      }else if(['sequence','communication'].includes(view.type)){
+        if(view.activity)fail(path+'.activity','Only activity views select an activity.');
         if(!view.interaction||!Object.hasOwn(document.interactions||{},view.interaction))fail(path+'.interaction','Reference an interaction defined in this document.');
         if(view.elements)fail(path+'.elements','Interaction views use their interaction participants. Remove elements.');
       }else{
+        if(view.activity)fail(path+'.activity','Only activity views select an activity.');
         if(!view.elements?.length)fail(path+'.elements','Choose at least one element for this structural view.');
         if(view.interaction)fail(path+'.interaction','Structural views select elements rather than an interaction.');
         view.elements.forEach((id,j)=>{exists(id,`${path}.elements[${j}]`);const allowed=view.type==='component'?['component']:['class','interface','enum'];if(!allowed.includes(elements.get(id).kind))fail(`${path}.elements[${j}]`,`A ${view.type} view cannot contain an element of kind "${elements.get(id).kind}".`);});
@@ -143,13 +171,14 @@
     return document;
   }
   function displayFields(display,allowed,path){if(!display)return;for(const state of ['collapsed','expanded'])for(const field of display[state]?.show||[])if(!allowed.includes(field))fail(path+'.'+state+'.show',`"${field}" is not a display field here. Choose: ${allowed.join(', ')}.`);}
-  function parse(text){
+  function read(text){
     if(typeof text!=='string')fail('$','Load a text JSON file.');
     if(text.length>4*1024*1024)fail('$','The document is too large. Maximum 4 MB of JSON text.');
     text=text.replace(/^\uFEFF/,'');scan(text);
     let document;try{document=JSON.parse(text);}catch(error){fail('$','Invalid JSON. '+error.message);}
-    return validate(document);
+    return document;
   }
-  U.Contract={schema,TYPES,SUPPORTED,ELEMENTS,RELATIONS,InputError,parse,validate};
+  function parse(text){return validate(read(text));}
+  U.Contract={schema,TYPES,SUPPORTED,ELEMENTS,RELATIONS,InputError,parse,read,check,validate};
   if(typeof module==='object'&&module.exports)module.exports=U.Contract;
 })(globalThis);

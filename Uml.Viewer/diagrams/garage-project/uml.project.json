@@ -1,0 +1,13 @@
+{
+  "$schema": "../../schema/uml-project.schema.json",
+  "version": 1,
+  "kind": "uml-project",
+  "id": "garage-project",
+  "title": "Garage · shared model project",
+  "model": "model.json",
+  "diagrams": [
+    "model-view.json",
+    "parking.json",
+    "removal.json"
+  ]
+}

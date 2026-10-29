@@ -66,6 +66,19 @@
       },
       "maxProperties": 12
     },
+    "activities": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/activity"
+      },
+      "maxProperties": 12
+    },
     "views": {
       "type": "array",
       "items": {
@@ -83,7 +96,8 @@
               "aggregation",
               "component",
               "sequence",
-              "communication"
+              "communication",
+              "activity"
             ]
           },
           "title": {
@@ -104,6 +118,12 @@
             "uniqueItems": true
           },
           "interaction": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "activity": {
             "type": "string",
             "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
             "minLength": 1,
@@ -204,6 +224,39 @@
       "required": [],
       "additionalProperties": false
     },
+    "member": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "kind": {
+          "enum": [
+            "operation",
+            "attribute"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1600
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 6000
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "name"
+      ],
+      "additionalProperties": false
+    },
     "element": {
       "type": "object",
       "properties": {
@@ -224,12 +277,31 @@
         "members": {
           "type": "array",
           "items": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 1600
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1600
+              },
+              {
+                "$ref": "#/$defs/member"
+              }
+            ]
           },
           "maxItems": 200,
           "minItems": 0
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "maxItems": 30,
+          "minItems": 0,
+          "uniqueItems": true
         },
         "notes": {
           "type": "string",
@@ -376,6 +448,18 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 1200
+            },
+            "references": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "maxItems": 30,
+              "minItems": 0,
+              "uniqueItems": true
             }
           },
           "required": [
@@ -484,6 +568,114 @@
       "required": [
         "participants",
         "steps"
+      ],
+      "additionalProperties": false
+    },
+    "activityNode": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "kind": {
+          "enum": [
+            "initial",
+            "final",
+            "action",
+            "decision",
+            "merge"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 6000
+        },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "maxItems": 30,
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "display": {
+          "$ref": "#/$defs/display"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "activity": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/activityNode"
+          },
+          "maxItems": 150,
+          "minItems": 1
+        },
+        "flows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "from": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "to": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "guard": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "id",
+              "from",
+              "to"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 600,
+          "minItems": 0
+        }
+      },
+      "required": [
+        "nodes",
+        "flows"
       ],
       "additionalProperties": false
     }

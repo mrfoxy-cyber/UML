@@ -1,6 +1,6 @@
 # UML diagram types
 
-Status: class, aggregation, component, sequence and communication are implemented. The schema and importer validate those types. Other catalogue entries are recognized but unsupported.
+Status: class, aggregation, component, sequence, communication and activity are implemented. The schema and importer validate those types. Other catalogue entries are recognized but unsupported.
 
 Every entry in `views` requires a `type`. This identifies the UML diagram, determines how its input is interpreted and selects its symbols and layout. The title remains a human-readable name for that particular view.
 
@@ -29,7 +29,7 @@ This snippet shows the view section; the full self-contained document also defin
 
 ## Proposed names and staged support
 
-These names form the catalogue. Class, aggregation, component, sequence and communication are available now. Other types produce an explicit unsupported-type error when imported.
+These names form the catalogue. Class, aggregation, component, sequence, communication and activity are available now. Other types produce an explicit unsupported-type error when imported.
 
 | JSON `type` | Display label | Category | Planned delivery |
 | --- | --- | --- | --- |
@@ -44,7 +44,7 @@ These names form the catalogue. Class, aggregation, component, sequence and comm
 | `deployment` | Deployment diagram | Structural | Later |
 | `profile` | Profile diagram | Structural | Later |
 | `use-case` | Use-case diagram | Behavioral | Later |
-| `activity` | Activity diagram | Behavioral | Later |
+| `activity` | Activity diagram | Behavioral | Implemented: actions, decisions, merges, initial/final, guarded flows |
 | `state-machine` | State-machine diagram | Behavioral | Later |
 | `interaction-overview` | Interaction overview diagram | Interaction | Later |
 | `timing` | Timing diagram | Interaction | Later; explicit time data required |

@@ -1,6 +1,6 @@
 # UML JSON Viewer — project plan
 
-Status: first usable implementation available in `index.html`. Five dedicated renderers support class, aggregation, component, sequence and communication. Named collapsed/expanded labels and visible-field lists are implemented. See `README.md` and `JSON-FORMAT.md` for use and current limits.
+Status: usable implementation available in `index.html`. Six dedicated renderers support class, aggregation, component, sequence, communication and activity. Named display states, identified members, shared references, cross-view navigation with Back and project-folder imports are implemented. Garage examples connect one model to parking/removal interactions and activities. See `CONNECTED-VIEWS.md` for the format and scope.
 
 The milestones below record the design and ongoing acceptance criteria. Contract, geometry and DOM integration checks are included. Further UML types, generator integration and exports remain later work.
 

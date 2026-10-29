@@ -1,0 +1,15 @@
+{
+  "views": [
+    {
+      "id": "model",
+      "type": "class",
+      "title": "Garage · shared model",
+      "elements": [
+        "service",
+        "garage",
+        "spot",
+        "vehicle"
+      ]
+    }
+  ]
+}

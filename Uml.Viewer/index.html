@@ -9,6 +9,8 @@
   <script defer src="vendor/elk.bundled.js"></script>
   <script defer src="src/validation/contract.js"></script>
   <script defer src="src/model/model.js"></script>
+  <script defer src="src/model/connectivity.js"></script>
+  <script defer src="src/model/project.js"></script>
   <script defer src="src/rendering/registry.js"></script>
   <script defer src="src/rendering/core/measure.js"></script>
   <script defer src="src/layout/graph.js"></script>
@@ -17,6 +19,7 @@
   <script defer src="src/rendering/types/component.js"></script>
   <script defer src="src/rendering/types/sequence.js"></script>
   <script defer src="src/rendering/types/communication.js"></script>
+  <script defer src="src/rendering/types/activity.js"></script>
   <script defer src="src/rendering/core/painter.js"></script>
   <script defer src="examples/examples.generated.js"></script>
   <script defer src="src/ui/app.js"></script>
@@ -24,8 +27,9 @@
 <body>
   <header class="app-header">
     <a class="brand" href="index.html" aria-label="UML Studio home"><span class="brand-mark" aria-hidden="true">◇</span><span>UML<span class="brand-light">STUDIO</span></span><span class="brand-caption">JSON VIEWER</span></a>
-    <div class="header-actions"><span class="privacy"><i></i>Local &amp; private</span><button id="theme-button" class="icon-button" type="button" aria-label="Switch color theme">◐</button><button id="open-button" class="primary-button" type="button"><span aria-hidden="true">↗</span> Open JSON</button></div>
+    <div class="header-actions"><span class="privacy"><i></i>Local &amp; private</span><button id="theme-button" class="icon-button" type="button" aria-label="Switch color theme">◐</button><button id="project-button" class="secondary-button" type="button">Open project</button><button id="open-button" class="primary-button" type="button"><span aria-hidden="true">↗</span> Open JSON</button></div>
     <input id="file-input" type="file" accept=".json,application/json" hidden>
+    <input id="project-input" type="file" webkitdirectory multiple hidden aria-label="Choose UML project folder">
   </header>
   <div class="app-shell">
     <aside class="sidebar" aria-label="Document and diagram navigation">
@@ -43,13 +47,13 @@
       <div class="page-heading"><div><div class="eyebrow"><span id="type-label">DIAGRAM</span><span class="eyebrow-divider">/</span><span id="origin-label">EXAMPLE</span></div><h1 id="view-title">Make the connections clear.</h1><p id="view-subtitle">Open a JSON document to explore its diagrams.</p></div><button id="guide-button" type="button" class="secondary-button">Symbol guide <span aria-hidden="true">↗</span></button></div>
       <section id="workbench" class="workbench" aria-label="Diagram viewer">
         <div class="workbench-toolbar"><div class="view-mode" role="group" aria-label="Presentation"><button id="diagram-tab" type="button" aria-pressed="true">Diagram</button><button id="json-tab" type="button" aria-pressed="false">JSON source</button></div><span id="element-count" class="element-count"></span><div class="toolbar-actions"><button id="reset-button" class="toolbar-button" type="button">Reset</button><button id="fullscreen-button" class="toolbar-button" type="button" aria-label="Toggle fullscreen">⛶</button><button id="download-button" class="toolbar-button" type="button" aria-label="Download the loaded JSON">↓ JSON</button></div></div>
-        <div id="search-toolbar" class="search-toolbar"><label class="search-field"><span aria-hidden="true">⌕</span><input id="element-search" type="search" placeholder="Find an element…" aria-label="Find an element"><kbd>↵</kbd></label><span class="search-hint">Click a card to change its detail level</span></div>
+        <div id="search-toolbar" class="search-toolbar"><button id="back-button" class="secondary-button" type="button" disabled>← Back</button><label class="search-field"><span aria-hidden="true">⌕</span><input id="element-search" type="search" placeholder="Find an element or method…" aria-label="Find an element"><kbd>↵</kbd></label><span class="search-hint">Click ↗ to find the same object in other views</span></div>
         <div id="viewport" class="viewport" tabindex="0" role="region" aria-label="Interactive diagram. Drag background to pan. Use plus or minus to zoom, and zero to fit.">
           <div id="world" class="world"><div id="groups-layer"></div><svg id="edges-layer" xmlns="http://www.w3.org/2000/svg" class="edges-layer"></svg><div id="nodes-layer"></div></div>
           <div id="layout-status" class="layout-status" role="status" aria-live="polite">Preparing your diagram…</div>
           <div id="canvas-empty" class="canvas-empty" hidden><strong>Nothing to display</strong><p>Choose a diagram or open a JSON document.</p></div>
         </div>
-        <div id="source-panel" class="source-panel" hidden><div><span>Original JSON · read only</span><span>Edit your file, then open or drop it again.</span></div><pre id="source-code" tabindex="0" aria-label="Loaded JSON source"></pre></div>
+        <div id="source-panel" class="source-panel" hidden><div><span id="source-label">Original JSON · read only</span><select id="source-file" hidden aria-label="Choose project source file"></select><span>Edit your file, then open it again.</span></div><pre id="source-code" tabindex="0" aria-label="Loaded JSON source"></pre></div>
         <div class="workbench-footer"><span id="canvas-hint" class="canvas-hint">↔ Drag to pan <span>·</span> Scroll to zoom</span><div id="zoom-controls" class="zoom-controls"><button id="zoom-out" type="button" aria-label="Zoom out">−</button><output id="zoom-value" aria-label="Zoom level">100%</output><button id="zoom-in" type="button" aria-label="Zoom in">+</button><span></span><button id="fit-button" type="button">Fit view</button><button id="actual-button" type="button">1:1</button></div></div>
       </section>
       <div class="under-canvas"><p id="view-caption"></p><span id="state-badge" class="state-badge">Editable JSON model</span></div>
@@ -58,7 +62,7 @@
       <div class="workflow-note"><span aria-hidden="true">{ }</span><p><strong>A small edit. A new perspective.</strong> Change the JSON in your editor, then drop it back in. Views of the same interaction stay connected.</p></div>
     </main>
   </div>
-  <aside id="inspector" class="inspector" hidden aria-label="Connection details"><div class="inspector-heading"><span>CONNECTION DETAILS</span><button id="close-inspector" type="button" class="icon-button" aria-label="Close connection details">×</button></div><div id="inspector-content"></div></aside>
+  <aside id="inspector" class="inspector" hidden aria-label="Object and connection details"><div class="inspector-heading"><span id="inspector-title">DETAILS &amp; CONNECTED VIEWS</span><button id="close-inspector" type="button" class="icon-button" aria-label="Close details">×</button></div><div id="inspector-content"></div></aside>
   <section id="error-panel" class="error-panel" hidden role="alert"><div><strong id="error-title">Could not open JSON</strong><button id="dismiss-error" type="button" class="icon-button" aria-label="Dismiss error">×</button></div><p id="error-message"></p><code id="error-path"></code><small>Your current document has been kept.</small></section>
   <div id="drop-overlay" class="drop-overlay" hidden><div><span aria-hidden="true">⇩</span><h2>Drop a JSON document</h2><p>We’ll check it, then bring your diagrams into view.</p></div></div>
   <dialog id="guide-dialog" class="guide-dialog"><div class="dialog-heading"><h2>A quick guide to the connections</h2><button id="close-guide" type="button" class="icon-button" aria-label="Close symbol guide">×</button></div><p>The diagram type sets the visual language. These symbols keep their meaning across views.</p><dl><dt>╌╌▷ Dependency</dt><dd>The source uses or depends on the target.</dd><dt>──▷ Inheritance</dt><dd>A hollow triangle points to the parent class.</dd><dt>╌╌▷ Implementation</dt><dd>A dashed line and hollow triangle point to an interface.</dd><dt>◇── Aggregation</dt><dd>A hollow diamond marks the whole. The parts can exist independently.</dd><dt>◆── Composition</dt><dd>A filled diamond marks composite ownership.</dd><dt>── Association</dt><dd>A relationship between elements, with no implied ownership.</dd><dt>→ Call · ⇢ Reply</dt><dd>Messages read in order in a sequence; a communication view groups them around collaborators.</dd><dt>alt · Guarded alternatives</dt><dd>Each branch has a condition. Open its frame to inspect the paths.</dd></dl><p class="guide-footnote">Named groups organize elements. Their borders do not imply UML ownership. Collapsed groups summarize their original endpoints.</p></dialog>

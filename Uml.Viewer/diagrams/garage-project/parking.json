@@ -1,0 +1,323 @@
+{
+  "interactions": {
+    "parking": {
+      "story": "park-vehicle",
+      "participants": [
+        "operator",
+        "service",
+        "garage",
+        "spot"
+      ],
+      "steps": [
+        {
+          "id": "request",
+          "kind": "call",
+          "from": "operator",
+          "to": "service",
+          "label": "Park(vehicle, garage)",
+          "references": [
+            "service.park"
+          ]
+        },
+        {
+          "id": "validate",
+          "kind": "call",
+          "from": "service",
+          "to": "service",
+          "label": "ParkNewVehicle(vehicle, garage, null)",
+          "references": [
+            "service.parkNew"
+          ]
+        },
+        {
+          "id": "already-parked",
+          "kind": "call",
+          "from": "service",
+          "to": "service",
+          "label": "IsParked(vehicle)",
+          "references": [
+            "service.isParked"
+          ]
+        },
+        {
+          "id": "parking-result",
+          "kind": "alt",
+          "name": "Parking outcome",
+          "display": {
+            "initial": "collapsed",
+            "collapsed": {
+              "name": "Parking result · open paths",
+              "show": [
+                "name",
+                "count"
+              ]
+            },
+            "expanded": {
+              "name": "Parking result · success or failure",
+              "show": [
+                "name",
+                "steps"
+              ]
+            }
+          },
+          "branches": [
+            {
+              "guard": "Catalog vehicle, registered garage and vehicle not already parked",
+              "steps": [
+                {
+                  "id": "auto-park",
+                  "kind": "call",
+                  "from": "service",
+                  "to": "garage",
+                  "label": "Park(vehicle)",
+                  "references": [
+                    "garage.park"
+                  ]
+                },
+                {
+                  "id": "fit-check",
+                  "kind": "call",
+                  "from": "garage",
+                  "to": "spot",
+                  "label": "Fits(vehicle) during spot selection",
+                  "references": [
+                    "spot.fits"
+                  ]
+                },
+                {
+                  "id": "numbered-park",
+                  "kind": "call",
+                  "from": "garage",
+                  "to": "garage",
+                  "label": "Park(vehicle, availableSpot.Number)",
+                  "references": [
+                    "garage.parkAt"
+                  ]
+                },
+                {
+                  "id": "recheck-fit",
+                  "kind": "call",
+                  "from": "garage",
+                  "to": "spot",
+                  "label": "Fits(vehicle) during numbered parking",
+                  "references": [
+                    "spot.fits"
+                  ]
+                },
+                {
+                  "id": "assign",
+                  "kind": "call",
+                  "from": "garage",
+                  "to": "spot",
+                  "label": "Park(vehicle)",
+                  "references": [
+                    "spot.park"
+                  ]
+                },
+                {
+                  "id": "success",
+                  "kind": "reply",
+                  "from": "garage",
+                  "to": "service",
+                  "label": "ParkingResult.Completed(spot)",
+                  "references": [
+                    "garage.parkAt"
+                  ]
+                },
+                {
+                  "id": "accepted",
+                  "kind": "reply",
+                  "from": "service",
+                  "to": "operator",
+                  "label": "ParkingResult: parked",
+                  "references": [
+                    "service.park"
+                  ]
+                }
+              ]
+            },
+            {
+              "guard": "Validation fails or no empty fitting spot is available",
+              "steps": [
+                {
+                  "id": "rejected",
+                  "kind": "reply",
+                  "from": "service",
+                  "to": "operator",
+                  "label": "ParkingResult.Failed(error)",
+                  "references": [
+                    "service.park"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "activities": {
+    "parking": {
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "initial",
+          "name": "Start"
+        },
+        {
+          "id": "request",
+          "kind": "action",
+          "name": "Request parking",
+          "references": [
+            "service.park"
+          ]
+        },
+        {
+          "id": "validate",
+          "kind": "decision",
+          "name": "Vehicle and garage valid?",
+          "references": [
+            "service.park",
+            "service.parkNew",
+            "service.isParked"
+          ]
+        },
+        {
+          "id": "select",
+          "kind": "action",
+          "name": "Find an empty fitting spot",
+          "references": [
+            "garage.park",
+            "spot.fits"
+          ]
+        },
+        {
+          "id": "available",
+          "kind": "decision",
+          "name": "Fitting spot found?",
+          "references": [
+            "garage.park"
+          ]
+        },
+        {
+          "id": "numbered",
+          "kind": "action",
+          "name": "Park at selected spot",
+          "references": [
+            "garage.parkAt"
+          ]
+        },
+        {
+          "id": "assign",
+          "kind": "action",
+          "name": "Assign vehicle to spot",
+          "references": [
+            "spot.park"
+          ]
+        },
+        {
+          "id": "success",
+          "kind": "action",
+          "name": "Return parking success",
+          "references": [
+            "service.park"
+          ]
+        },
+        {
+          "id": "failure",
+          "kind": "action",
+          "name": "Return parking failure",
+          "references": [
+            "service.park"
+          ]
+        },
+        {
+          "id": "end",
+          "kind": "final",
+          "name": "Finish"
+        }
+      ],
+      "flows": [
+        {
+          "id": "begin",
+          "from": "start",
+          "to": "request"
+        },
+        {
+          "id": "check",
+          "from": "request",
+          "to": "validate"
+        },
+        {
+          "id": "valid",
+          "from": "validate",
+          "to": "select",
+          "guard": "yes"
+        },
+        {
+          "id": "invalid",
+          "from": "validate",
+          "to": "failure",
+          "guard": "no"
+        },
+        {
+          "id": "selected",
+          "from": "select",
+          "to": "available"
+        },
+        {
+          "id": "found",
+          "from": "available",
+          "to": "numbered",
+          "guard": "yes"
+        },
+        {
+          "id": "full",
+          "from": "available",
+          "to": "failure",
+          "guard": "no"
+        },
+        {
+          "id": "park",
+          "from": "numbered",
+          "to": "assign"
+        },
+        {
+          "id": "report",
+          "from": "assign",
+          "to": "success"
+        },
+        {
+          "id": "done",
+          "from": "success",
+          "to": "end"
+        },
+        {
+          "id": "failed",
+          "from": "failure",
+          "to": "end"
+        }
+      ]
+    }
+  },
+  "views": [
+    {
+      "id": "parking-sequence",
+      "type": "sequence",
+      "title": "Garage · parking conversation",
+      "interaction": "parking"
+    },
+    {
+      "id": "parking-communication",
+      "type": "communication",
+      "title": "Garage · parking collaborators",
+      "interaction": "parking"
+    },
+    {
+      "id": "parking-activity",
+      "type": "activity",
+      "title": "Garage · parking workflow",
+      "activity": "parking"
+    }
+  ]
+}

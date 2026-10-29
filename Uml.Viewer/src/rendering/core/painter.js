@@ -49,6 +49,7 @@
     for(const node of scene.nodes){
       const p=node.presentation,card=html(document,'article','uml-node node-'+node.kind+(p.open?' is-open':'')+(node.emphasis?' is-whole':''));card.dataset.nodeId=node.id;
       Object.assign(card.style,{left:node.x+'px',top:node.y+'px',width:node.width+'px',height:node.height+'px'});
+      if(['decision','merge'].includes(node.kind)){const shape=svg(document,'svg',{viewBox:'0 0 260 170',class:'decision-shape','aria-hidden':true});shape.append(svg(document,'polygon',{points:'130,2 258,85 130,168 2,85'}));card.append(shape);}
       const header=html(document,'button','node-header');header.type='button';header.disabled=!p.collapsible;header.style.height=node.headerHeight+'px';header.setAttribute('aria-label',(p.open?'Collapse ':'Expand ')+p.name);header.setAttribute('aria-expanded',String(p.open));
       header.title=p.name;
       if(node.kind==='actor'){
@@ -59,9 +60,10 @@
       if(p.show.has('name'))names.append(html(document,'span','node-name',p.name));
       header.append(names);if(p.collapsible)header.append(html(document,'span','node-toggle',p.open?'−':'+'));
       header.addEventListener('click',()=>actions.toggle(node.id,node.item,node.kind==='collapsed-group'?'group':'element'));card.append(header);
+      if(node.kind!=='collapsed-group'&&actions.selectNode&&(!scene.activity||node.item.references?.length)){const link=html(document,'button','node-connect','↗');link.type='button';link.setAttribute('aria-label','Connected views for '+node.item.name);link.title='Find this object in other views';link.addEventListener('click',()=>actions.selectNode(node));card.append(link);}
       if(node.rows.length){
         const body=html(document,'div','node-body');body.tabIndex=0;body.setAttribute('aria-label',p.name+' details');body.style.maxHeight=(node.height-node.headerHeight)+'px';
-        for(const row of node.rows)body.append(html(document,'div','node-row'+(row.muted?' muted':''),row.text));card.append(body);
+        for(const row of node.rows){const line=html(document,row.objectId?'button':'div','node-row'+(row.muted?' muted':''),row.text);if(row.objectId){line.type='button';line.dataset.objectId=row.objectId;line.title='Find this member in other views';line.addEventListener('click',()=>actions.selectObject?.(row.objectId));}body.append(line);}card.append(body);
       }
       nodes.append(card);
     }

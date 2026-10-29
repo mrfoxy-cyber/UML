@@ -1,6 +1,6 @@
 # UML Studio — JSON Viewer
 
-A standalone, offline viewer for human-editable UML JSON. Dedicated class, aggregation, component, sequence and communication renderers share a drawing core and theme.
+A standalone, offline viewer for human-editable UML JSON. Dedicated class, aggregation, component, sequence, communication and activity renderers share a drawing core and theme.
 
 ## Open the viewer
 
@@ -8,9 +8,14 @@ Open [index.html](index.html) in a modern browser. No install, server, account o
 
 Choose an example, use **Open JSON**, or drop one `.json` file onto the page. Edit externally, then open/drop again. The viewer does not overwrite files. **JSON source** shows the exact imported text; **↓ JSON** downloads a copy.
 
+Choose **Garage · connected views** to try shared identity. Expand Garage service and click a method, or use a card's **↗** button. **Also appears in** groups results by diagram; additional calls to the same method stay available under “more appearances.” Jumps reveal collapsed groups/alternative frames and highlight matches. **← Back** restores the previous view, detail state, zoom and selection.
+
+Use **Open project** and choose `diagrams/garage-project` to load a shared catalogue and separate parking/removal files through `uml.project.json`. Source mode offers each original file and a combined document; downloading the combined document produces a standalone JSON that can be opened normally. Edit the files outside the viewer and reopen the folder to refresh.
+
 Click a card/group header to change detail state. JSON can define different collapsed/expanded names and visible fields. Search focuses an element; drag pans, scroll zooms and **Fit view** frames the diagram. Keyboard users can tab to cards/controls; on the canvas, arrows pan, `+`/`−` zoom and `0`/`F` fit.
 
 - [JSON format and named collapse states](JSON-FORMAT.md)
+- [Connected views, shared IDs and project manifests](CONNECTED-VIEWS.md)
 - [Published JSON Schema](schema/uml-document.schema.json)
 - [Diagram types](DIAGRAM-TYPES.md)
 - [Project plan](PROJECT-PLAN.md)
@@ -23,6 +28,9 @@ Click a card/group header to change detail state. JSON can define different coll
 - [Components](examples/components.uml.json): connections crossing collapsed groups.
 - [Parking success](examples/parking-success.uml.json): one interaction, two views.
 - [Parking alternatives](examples/parking-alternatives.uml.json): named alternative frame and guards.
+- [Garage connected views](examples/garage-connected.uml.json): seven views of one model, parking and removal operations, repeated calls and activity references.
+- [Garage parking](examples/garage-parking-linked.uml.json) and [Garage removal](examples/garage-removal-linked.uml.json): smaller standalone examples with four views each.
+- [Garage project manifest](diagrams/garage-project/uml.project.json): the same shared model split into readable source files.
 
 These teaching examples do not claim to capture an application's complete implementation.
 
@@ -44,6 +52,6 @@ The development-only DOM test library is pinned in `package.json`/`pnpm-lock.yam
 
 ## Scope
 
-Implemented: five renderers, typed relationships, flat groups, named collapse states, nested guarded alternatives, validation, search, pan/zoom, fullscreen, light/dark themes, JSON download, safe text rendering and preservation of the last good import.
+Implemented: six renderers, stable shared/member IDs, cross-view references and navigation with Back, project-folder manifests, typed relationships, flat groups, named collapse states, nested guarded alternatives, validation, search, pan/zoom, fullscreen, light/dark themes, JSON download, safe text rendering and preservation of the last good import.
 
 The separate generator, other UML types, nested structural groups, file watching, in-app editing and SVG/PlantUML export remain later work. A folder can organize accepted documents; the browser reads a file when selected or dropped.

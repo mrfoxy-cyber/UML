@@ -1,6 +1,6 @@
 const fs=require('node:fs');const path=require('node:path');const assert=require('node:assert/strict');
 const root=path.resolve(__dirname,'..');
-const scripts=['src/validation/contract.js','src/model/model.js','src/rendering/registry.js','src/rendering/core/measure.js','src/layout/graph.js','src/rendering/types/class.js','src/rendering/types/aggregation.js','src/rendering/types/component.js','src/rendering/types/sequence.js','src/rendering/types/communication.js'];
+const scripts=['src/validation/contract.js','src/model/model.js','src/model/connectivity.js','src/model/project.js','src/rendering/registry.js','src/rendering/core/measure.js','src/layout/graph.js','src/rendering/types/class.js','src/rendering/types/aggregation.js','src/rendering/types/component.js','src/rendering/types/sequence.js','src/rendering/types/communication.js','src/rendering/types/activity.js'];
 function setup(){for(const file of scripts)require(path.join(root,file));return globalThis.UmlViewer;}
 function example(name){return JSON.parse(fs.readFileSync(path.join(root,'examples',name+'.uml.json'),'utf8'));}
 function context(){const ELK=require('../vendor/elk.bundled.js');return {elk:new ELK(),measure:(text,size=13)=>[...String(text)].length*size*.55,state:{open:new Map()},viewport:{width:1100,height:650}};}

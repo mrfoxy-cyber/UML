@@ -1,0 +1,378 @@
+{
+  "$schema": "../schema/uml-document.schema.json",
+  "version": 1,
+  "id": "garage-removal-linked",
+  "title": "Garage · removal linked example",
+  "elements": {
+    "operator": {
+      "kind": "actor",
+      "name": "Garage operator"
+    },
+    "service": {
+      "kind": "class",
+      "name": "GarageService",
+      "notes": "Reviewed against Garage/Services/GarageService.cs. Calls are simplified; collection queries and exception handling are omitted.",
+      "members": [
+        {
+          "id": "service.park",
+          "kind": "operation",
+          "name": "+ Park(vehicle, garage, spotNumber?)"
+        },
+        {
+          "id": "service.parkNew",
+          "kind": "operation",
+          "name": "- ParkNewVehicle(vehicle, garage, spotNumber?)"
+        },
+        {
+          "id": "service.isParked",
+          "kind": "operation",
+          "name": "+ IsParked(vehicle)"
+        }
+      ],
+      "display": {
+        "collapsed": {
+          "name": "Garage service",
+          "show": [
+            "name",
+            "kind",
+            "count"
+          ]
+        },
+        "expanded": {
+          "name": "GarageService · operations",
+          "show": [
+            "name",
+            "kind",
+            "members",
+            "notes"
+          ]
+        }
+      }
+    },
+    "garage": {
+      "kind": "class",
+      "name": "Garage",
+      "notes": "Garage/Models/Garage.cs. Automatic parking chooses an empty fitting spot, then delegates to the numbered overload.",
+      "members": [
+        {
+          "id": "garage.park",
+          "kind": "operation",
+          "name": "+ Park(vehicle)"
+        },
+        {
+          "id": "garage.parkAt",
+          "kind": "operation",
+          "name": "+ Park(vehicle, spot)"
+        },
+        {
+          "id": "garage.remove",
+          "kind": "operation",
+          "name": "+ Remove(registrationNumber)"
+        },
+        {
+          "id": "garage.find",
+          "kind": "operation",
+          "name": "+ FindVehicleByRegistration(registrationNumber)"
+        }
+      ]
+    },
+    "spot": {
+      "kind": "class",
+      "name": "ParkingSpot",
+      "notes": "Garage/Models/ParkingSpot.cs. Internal implementation class. Park verifies the spot again before setting Vehicle.",
+      "members": [
+        {
+          "id": "spot.fits",
+          "kind": "operation",
+          "name": "+ Fits(vehicle)"
+        },
+        {
+          "id": "spot.park",
+          "kind": "operation",
+          "name": "+ Park(vehicle)"
+        },
+        {
+          "id": "spot.clear",
+          "kind": "operation",
+          "name": "+ Clear()"
+        }
+      ]
+    },
+    "vehicle": {
+      "kind": "class",
+      "name": "Vehicle",
+      "members": [
+        "RegistrationNumber",
+        "SpecificationDetails"
+      ]
+    }
+  },
+  "groups": [
+    {
+      "id": "domain",
+      "name": "Garage internals",
+      "members": [
+        "garage",
+        "spot",
+        "vehicle"
+      ],
+      "display": {
+        "initial": "collapsed",
+        "collapsed": {
+          "name": "Garage domain · reveal classes",
+          "show": [
+            "name",
+            "count"
+          ]
+        },
+        "expanded": {
+          "name": "Garage domain",
+          "show": [
+            "name",
+            "members"
+          ]
+        }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "service-uses-garage",
+      "kind": "dependency",
+      "from": "service",
+      "to": "garage"
+    },
+    {
+      "id": "garage-owns-spots",
+      "kind": "composition",
+      "from": "garage",
+      "to": "spot",
+      "toMultiplicity": "1..*"
+    },
+    {
+      "id": "spot-holds-vehicle",
+      "kind": "association",
+      "from": "spot",
+      "to": "vehicle",
+      "toMultiplicity": "0..1"
+    }
+  ],
+  "interactions": {
+    "removal": {
+      "story": "remove-vehicle",
+      "participants": [
+        "operator",
+        "garage",
+        "spot"
+      ],
+      "steps": [
+        {
+          "id": "request",
+          "kind": "call",
+          "from": "operator",
+          "to": "garage",
+          "label": "Remove(registrationNumber)",
+          "references": [
+            "garage.remove"
+          ]
+        },
+        {
+          "id": "lookup",
+          "kind": "call",
+          "from": "garage",
+          "to": "garage",
+          "label": "FindVehicleByRegistration(registrationNumber)",
+          "references": [
+            "garage.find"
+          ]
+        },
+        {
+          "id": "removal-result",
+          "kind": "alt",
+          "name": "Removal outcome",
+          "branches": [
+            {
+              "guard": "Vehicle was found",
+              "steps": [
+                {
+                  "id": "release",
+                  "kind": "call",
+                  "from": "garage",
+                  "to": "spot",
+                  "label": "Clear()",
+                  "references": [
+                    "spot.clear"
+                  ]
+                },
+                {
+                  "id": "removed",
+                  "kind": "reply",
+                  "from": "garage",
+                  "to": "operator",
+                  "label": "GarageOperationResult.Completed(spot)",
+                  "references": [
+                    "garage.remove"
+                  ]
+                }
+              ]
+            },
+            {
+              "guard": "Vehicle was not found",
+              "steps": [
+                {
+                  "id": "missing",
+                  "kind": "reply",
+                  "from": "garage",
+                  "to": "operator",
+                  "label": "GarageOperationResult.Failed(VehicleNotFound)",
+                  "references": [
+                    "garage.remove"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "activities": {
+    "removal": {
+      "nodes": [
+        {
+          "id": "start",
+          "kind": "initial",
+          "name": "Start"
+        },
+        {
+          "id": "request",
+          "kind": "action",
+          "name": "Request removal",
+          "references": [
+            "garage.remove"
+          ]
+        },
+        {
+          "id": "lookup",
+          "kind": "action",
+          "name": "Find vehicle by registration",
+          "references": [
+            "garage.find"
+          ]
+        },
+        {
+          "id": "found",
+          "kind": "decision",
+          "name": "Vehicle found?",
+          "references": [
+            "garage.find"
+          ]
+        },
+        {
+          "id": "clear",
+          "kind": "action",
+          "name": "Clear the parking spot",
+          "references": [
+            "spot.clear"
+          ]
+        },
+        {
+          "id": "success",
+          "kind": "action",
+          "name": "Return removal success",
+          "references": [
+            "garage.remove"
+          ]
+        },
+        {
+          "id": "failure",
+          "kind": "action",
+          "name": "Return vehicle not found",
+          "references": [
+            "garage.remove"
+          ]
+        },
+        {
+          "id": "end",
+          "kind": "final",
+          "name": "Finish"
+        }
+      ],
+      "flows": [
+        {
+          "id": "begin",
+          "from": "start",
+          "to": "request"
+        },
+        {
+          "id": "find",
+          "from": "request",
+          "to": "lookup"
+        },
+        {
+          "id": "check",
+          "from": "lookup",
+          "to": "found"
+        },
+        {
+          "id": "yes",
+          "from": "found",
+          "to": "clear",
+          "guard": "yes"
+        },
+        {
+          "id": "no",
+          "from": "found",
+          "to": "failure",
+          "guard": "no"
+        },
+        {
+          "id": "report",
+          "from": "clear",
+          "to": "success"
+        },
+        {
+          "id": "done",
+          "from": "success",
+          "to": "end"
+        },
+        {
+          "id": "failed",
+          "from": "failure",
+          "to": "end"
+        }
+      ]
+    }
+  },
+  "views": [
+    {
+      "id": "model",
+      "type": "class",
+      "title": "Garage · shared model",
+      "elements": [
+        "service",
+        "garage",
+        "spot",
+        "vehicle"
+      ]
+    },
+    {
+      "id": "removal-sequence",
+      "type": "sequence",
+      "title": "Garage · removal conversation",
+      "interaction": "removal"
+    },
+    {
+      "id": "removal-communication",
+      "type": "communication",
+      "title": "Garage · removal collaborators",
+      "interaction": "removal"
+    },
+    {
+      "id": "removal-activity",
+      "type": "activity",
+      "title": "Garage · removal workflow",
+      "activity": "removal"
+    }
+  ]
+}

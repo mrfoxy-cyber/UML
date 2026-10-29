@@ -5,7 +5,8 @@
     const open=state.open.has(key)?state.open.get(key):config.initial?config.initial==='expanded':category==='group';
     const mode=open?'expanded':'collapsed';
     const defaults=category==='group'?(open?['name','count','members']:['name','count']):category==='fragment'?(open?['name','steps']:['name','count']):(open?['name','kind','members','notes']:['name','kind','count']);
-    return {open,collapsible:config.collapsible!==false,name:config[mode]?.name||item.name||'Alternatives',show:new Set(config[mode]?.show||defaults)};
+    const show=new Set(config[mode]?.show||defaults);if(open&&state.reveal?.has(key))show.add(category==='fragment'?'steps':'members');
+    return {open,collapsible:config.collapsible!==false,name:config[mode]?.name||item.name||'Alternatives',show};
   }
   function interaction(document,id){
     const source=document.interactions[id],messages=[],fragments=[];

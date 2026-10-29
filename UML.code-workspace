@@ -12,6 +12,10 @@
       {
         "fileMatch": ["/Uml.Viewer/examples/*.uml.json", "/Uml.Viewer/diagrams/*.uml.json"],
         "url": "./Uml.Viewer/schema/uml-document.schema.json"
+      },
+      {
+        "fileMatch": ["**/uml.project.json"],
+        "url": "./Uml.Viewer/schema/uml-project.schema.json"
       }
     ]
   }

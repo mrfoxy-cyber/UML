@@ -1,5 +1,5 @@
 const test=require('node:test'),assert=require('node:assert/strict');const {setup,example,context,geometry}=require('./helpers.cjs');const U=setup();
-test('five explicit renderer modules are registered',()=>assert.deepEqual(U.Renderers.types().sort(),U.Contract.SUPPORTED.slice().sort()));
+test('six explicit renderer modules are registered',()=>assert.deepEqual(U.Renderers.types().sort(),U.Contract.SUPPORTED.slice().sort()));
 test('all examples render finite, non-overlapping scenes in every declared view',async()=>{for(const name of ['garage-structure','bicycle-aggregation','components','parking-success','parking-alternatives']){const d=U.Contract.validate(example(name));for(const view of d.views)geometry(await U.Renderers.get(view.type).build(d,view,context()));}});
 test('named element states control the actual visible fields',()=>{
   const d=example('garage-structure'),state={open:new Map()},item=d.elements.service;
