@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "id": "parking-alternatives",
+  "title": "Park vehicle — choose a guarded path",
+  "elements": {
+    "user": { "kind": "actor", "name": "Garage user" },
+    "service": {
+      "kind": "class",
+      "name": "GarageService",
+      "members": ["+ Park(vehicle, garage)"],
+      "display": {
+        "collapsed": { "name": "Parking service", "show": ["name"] },
+        "expanded": { "name": "GarageService — parking", "show": ["name", "kind", "members"] }
+      }
+    },
+    "garage": { "kind": "class", "name": "Garage", "members": ["+ AvailableSpaces: int", "+ Park(vehicle)"] }
+  },
+  "interactions": {
+    "parking": {
+      "story": "park-vehicle",
+      "participants": ["user", "service", "garage"],
+      "steps": [
+        { "id": "request", "kind": "call", "from": "user", "to": "service", "label": "Park(vehicle, garage)" },
+        {
+          "id": "outcome",
+          "kind": "alt",
+          "name": "Parking outcome",
+          "display": {
+            "initial": "collapsed",
+            "collapsed": { "name": "Parking outcome", "show": ["name", "count"] },
+            "expanded": { "name": "Parking outcome — alternatives", "show": ["name", "steps"] }
+          },
+          "branches": [
+            {
+              "guard": "Capacity is available",
+              "steps": [
+                { "id": "park", "kind": "call", "from": "service", "to": "garage", "label": "Park(vehicle)" },
+                { "id": "assigned", "kind": "reply", "from": "garage", "to": "service", "label": "ParkingResult.Completed" },
+                { "id": "confirm", "kind": "reply", "from": "service", "to": "user", "label": "Vehicle parked" }
+              ]
+            },
+            {
+              "guard": "The garage is full",
+              "steps": [
+                { "id": "reject", "kind": "reply", "from": "service", "to": "user", "label": "No capacity available" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "views": [
+    { "id": "guarded-sequence", "type": "sequence", "title": "Parking alternatives", "interaction": "parking" },
+    { "id": "guarded-communication", "type": "communication", "title": "Parking collaborators", "interaction": "parking" }
+  ]
+}

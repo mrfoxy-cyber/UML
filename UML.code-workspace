@@ -1,0 +1,18 @@
+{
+  "folders": [
+    { "name": "UML", "path": "." }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.cache": true,
+      "**/.vs": true
+    },
+    "json.schemas": [
+      {
+        "fileMatch": ["/Uml.Viewer/examples/*.uml.json", "/Uml.Viewer/diagrams/*.uml.json"],
+        "url": "./Uml.Viewer/schema/uml-document.schema.json"
+      }
+    ]
+  }
+}

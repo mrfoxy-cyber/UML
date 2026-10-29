@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "id": "garage-structure",
+  "title": "Garage structure",
+  "elements": {
+    "service": {
+      "kind": "class",
+      "name": "GarageService",
+      "members": ["+ Park(vehicle, garage)", "+ CreateGarage(name, capacity)"],
+      "notes": "Coordinates operations across the garages.",
+      "display": {
+        "initial": "collapsed",
+        "collapsed": { "name": "Garage service", "show": ["name", "count"] },
+        "expanded": { "name": "GarageService · operations", "show": ["name", "kind", "members", "notes"] }
+      }
+    },
+    "garage": { "kind": "class", "name": "Garage", "members": ["+ Capacity: int", "+ Park(vehicle)", "+ Remove(registration)"] },
+    "spot": { "kind": "class", "name": "ParkingSpot", "members": ["+ Number: int", "+ Vehicle: Vehicle?", "+ Park(vehicle)", "+ Clear()"] }
+  },
+  "groups": [
+    {
+      "id": "domain",
+      "name": "Garage domain",
+      "members": ["service", "garage", "spot"],
+      "display": {
+        "initial": "expanded",
+        "collapsed": { "name": "Domain overview", "show": ["name", "count"] },
+        "expanded": { "name": "Garage domain", "show": ["name", "members"] }
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "id": "service-uses-garage",
+      "kind": "dependency",
+      "from": "service",
+      "to": "garage",
+      "label": "parks vehicles"
+    },
+    {
+      "id": "garage-uses-spot",
+      "kind": "dependency",
+      "from": "garage",
+      "to": "spot",
+      "label": "assigns parking"
+    }
+  ],
+  "views": [
+    {
+      "id": "garage-classes",
+      "type": "class",
+      "title": "Garage classes",
+      "elements": ["service", "garage", "spot"]
+    }
+  ]
+}

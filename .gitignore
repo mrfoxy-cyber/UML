@@ -1,0 +1,13 @@
+.vs/
+.vscode/*
+!.vscode/tasks.json
+node_modules/
+.cache/
+test-results/
+bin/
+obj/
+*.user
+*.suo
+.env
+.env.*
+!.env.example

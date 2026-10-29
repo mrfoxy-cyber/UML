@@ -1,0 +1,4 @@
+* text=auto eol=lf
+*.sln text eol=crlf
+# Keep the upstream bundle byte-for-byte identical to its recorded checksum.
+Uml.Viewer/vendor/elk.bundled.js -text -whitespace

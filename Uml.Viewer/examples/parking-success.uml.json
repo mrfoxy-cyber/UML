@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "id": "parking-success",
+  "title": "Park vehicle — simplified successful scenario",
+  "elements": {
+    "user": { "kind": "actor", "name": "Garage user" },
+    "service": { "kind": "class", "name": "GarageService" },
+    "garage": { "kind": "class", "name": "Garage" },
+    "spot": { "kind": "class", "name": "ParkingSpot" }
+  },
+  "interactions": {
+    "park-vehicle": {
+      "story": "park-vehicle",
+      "scenario": "successful-parking",
+      "participants": ["user", "service", "garage", "spot"],
+      "steps": [
+        {
+          "id": "request-parking",
+          "kind": "call",
+          "from": "user",
+          "to": "service",
+          "label": "Park(vehicle, garage)"
+        },
+        {
+          "id": "assign-space",
+          "kind": "call",
+          "from": "service",
+          "to": "garage",
+          "label": "Park(vehicle)"
+        },
+        {
+          "id": "occupy-space",
+          "kind": "call",
+          "from": "garage",
+          "to": "spot",
+          "label": "Park(vehicle)"
+        },
+        {
+          "id": "confirm-parking",
+          "kind": "reply",
+          "from": "service",
+          "to": "user",
+          "label": "Parking succeeded"
+        }
+      ]
+    }
+  },
+  "views": [
+    {
+      "id": "parking-sequence",
+      "type": "sequence",
+      "title": "Parking sequence",
+      "interaction": "park-vehicle"
+    },
+    {
+      "id": "parking-communication",
+      "type": "communication",
+      "title": "Parking collaboration",
+      "interaction": "park-vehicle"
+    }
+  ]
+}

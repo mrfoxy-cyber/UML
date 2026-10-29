@@ -1,0 +1,491 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:uml-json-viewer:document:1",
+  "title": "UML viewer document",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "elements": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/element"
+      },
+      "maxProperties": 150,
+      "minProperties": 1
+    },
+    "groups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/group"
+      },
+      "maxItems": 50,
+      "minItems": 0
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/relationship"
+      },
+      "maxItems": 600,
+      "minItems": 0
+    },
+    "interactions": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+        "minLength": 1,
+        "maxLength": 120
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/interaction"
+      },
+      "maxProperties": 12
+    },
+    "views": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "type": {
+            "enum": [
+              "class",
+              "aggregation",
+              "component",
+              "sequence",
+              "communication"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "elements": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "maxItems": 200,
+            "minItems": 0,
+            "uniqueItems": true
+          },
+          "interaction": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "title"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 30,
+      "minItems": 1
+    }
+  },
+  "required": [
+    "version",
+    "id",
+    "title",
+    "elements",
+    "views"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "display": {
+      "type": "object",
+      "properties": {
+        "initial": {
+          "enum": [
+            "collapsed",
+            "expanded"
+          ]
+        },
+        "collapsible": {
+          "type": "boolean"
+        },
+        "collapsed": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "show": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "name",
+                  "kind",
+                  "members",
+                  "notes",
+                  "count",
+                  "steps",
+                  "guards"
+                ]
+              },
+              "maxItems": 7,
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        },
+        "expanded": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "show": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "name",
+                  "kind",
+                  "members",
+                  "notes",
+                  "count",
+                  "steps",
+                  "guards"
+                ]
+              },
+              "maxItems": 7,
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "element": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "class",
+            "interface",
+            "enum",
+            "component",
+            "actor"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1600
+          },
+          "maxItems": 200,
+          "minItems": 0
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 6000
+        },
+        "display": {
+          "$ref": "#/$defs/display"
+        }
+      },
+      "required": [
+        "kind",
+        "name"
+      ],
+      "additionalProperties": false
+    },
+    "group": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "maxItems": 200,
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 6000
+        },
+        "display": {
+          "$ref": "#/$defs/display"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "members"
+      ],
+      "additionalProperties": false
+    },
+    "relationship": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "kind": {
+          "enum": [
+            "dependency",
+            "association",
+            "inheritance",
+            "implementation",
+            "aggregation",
+            "composition"
+          ]
+        },
+        "from": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "fromMultiplicity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        },
+        "toMultiplicity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 40
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false
+    },
+    "step": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "kind": {
+              "enum": [
+                "call",
+                "reply"
+              ]
+            },
+            "from": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "to": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "label": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1200
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "from",
+            "to",
+            "label"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+              "minLength": 1,
+              "maxLength": 120
+            },
+            "kind": {
+              "const": "alt"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            },
+            "display": {
+              "$ref": "#/$defs/display"
+            },
+            "branches": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "guard": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "steps": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/step"
+                    },
+                    "maxItems": 600,
+                    "minItems": 0
+                  }
+                },
+                "required": [
+                  "guard",
+                  "steps"
+                ],
+                "additionalProperties": false
+              },
+              "maxItems": 8,
+              "minItems": 2
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "branches"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "interaction": {
+      "type": "object",
+      "properties": {
+        "story": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "scenario": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*$",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "maxItems": 24,
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          },
+          "maxItems": 600,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "participants",
+        "steps"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

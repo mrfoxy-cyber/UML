@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "id": "components",
+  "title": "A small online shop",
+  "elements": {
+    "web": { "kind": "component", "name": "Web storefront", "members": ["Product pages", "Shopping cart"] },
+    "api": { "kind": "component", "name": "Shop API", "members": ["Orders", "Checkout"] },
+    "catalog": { "kind": "component", "name": "Product catalogue", "members": ["Search", "Availability"] },
+    "payment": { "kind": "component", "name": "Payment provider", "members": ["Payment authorization"] }
+  },
+  "groups": [
+    { "id": "shop", "name": "Shop application", "members": ["web", "api"] },
+    {
+      "id": "services",
+      "name": "Supporting services",
+      "members": ["catalog", "payment"],
+      "display": {
+        "initial": "collapsed",
+        "collapsed": { "name": "Supporting services", "show": ["name", "count"] },
+        "expanded": { "name": "Service dependencies", "show": ["name", "members"] }
+      }
+    }
+  ],
+  "relationships": [
+    { "id": "web-api", "kind": "dependency", "from": "web", "to": "api", "label": "orders & products" },
+    { "id": "api-catalog", "kind": "dependency", "from": "api", "to": "catalog", "label": "searches products" },
+    { "id": "api-payment", "kind": "dependency", "from": "api", "to": "payment", "label": "authorizes payment" }
+  ],
+  "views": [
+    { "id": "shop-components", "type": "component", "title": "Shop components", "elements": ["web", "api", "catalog", "payment"] }
+  ]
+}

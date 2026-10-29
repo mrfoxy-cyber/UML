@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "UML: Preview viewer",
+      "type": "process",
+      "command": "node",
+      "args": ["scripts/serve.cjs"],
+      "options": { "cwd": "${workspaceFolder}/Uml.Viewer" },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "uml-preview",
+        "pattern": { "regexp": "^(?!)$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "^$",
+          "endsPattern": "^UML viewer preview:"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "UML: Build examples and schema",
+      "type": "process",
+      "command": "node",
+      "args": ["scripts/build.cjs"],
+      "options": { "cwd": "${workspaceFolder}/Uml.Viewer" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "UML: Run tests",
+      "type": "process",
+      "command": "node",
+      "args": ["--test", "tests/*.test.cjs"],
+      "options": { "cwd": "${workspaceFolder}/Uml.Viewer" },
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": []
+    }
+  ]
+}

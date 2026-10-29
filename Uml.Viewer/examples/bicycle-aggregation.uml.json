@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "id": "bicycle-aggregation",
+  "title": "Bicycle and its parts",
+  "elements": {
+    "bicycle": {
+      "kind": "class",
+      "name": "Cykel",
+      "members": ["+ wheels: Hjul[]", "+ saddle: Sadel", "+ handlebar: Styre"],
+      "notes": "The whole. Its parts can be removed and reused independently.",
+      "display": {
+        "collapsed": { "name": "Cykel", "show": ["name", "kind", "count"] },
+        "expanded": { "name": "Cykel — delar", "show": ["name", "members", "notes"] }
+      }
+    },
+    "wheel": { "kind": "class", "name": "Hjul", "members": ["+ diameter: number", "+ Rotate()"] },
+    "saddle": { "kind": "class", "name": "Sadel", "members": ["+ material: string", "+ AdjustHeight()"] },
+    "handlebar": { "kind": "class", "name": "Styre", "members": ["+ width: number", "+ Steer(direction)"] }
+  },
+  "relationships": [
+    {
+      "id": "bicycle-has-wheels",
+      "kind": "aggregation",
+      "from": "bicycle",
+      "to": "wheel",
+      "toMultiplicity": "2"
+    },
+    {
+      "id": "bicycle-has-saddle",
+      "kind": "aggregation",
+      "from": "bicycle",
+      "to": "saddle"
+    },
+    {
+      "id": "bicycle-has-handlebar",
+      "kind": "aggregation",
+      "from": "bicycle",
+      "to": "handlebar"
+    }
+  ],
+  "views": [
+    {
+      "id": "bicycle-parts",
+      "type": "aggregation",
+      "title": "Bicycle aggregation",
+      "elements": ["bicycle", "wheel", "saddle", "handlebar"]
+    }
+  ]
+}
