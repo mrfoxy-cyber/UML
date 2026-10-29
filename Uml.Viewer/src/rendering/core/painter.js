@@ -60,7 +60,7 @@
       if(p.show.has('name'))names.append(html(document,'span','node-name',p.name));
       header.append(names);if(p.collapsible)header.append(html(document,'span','node-toggle',p.open?'−':'+'));
       header.addEventListener('click',()=>actions.toggle(node.id,node.item,node.kind==='collapsed-group'?'group':'element'));card.append(header);
-      if(node.kind!=='collapsed-group'&&actions.selectNode&&(!scene.activity||node.item.references?.length)){const link=html(document,'button','node-connect','↗');link.type='button';link.setAttribute('aria-label','Connected views for '+node.item.name);link.title='Find this object in other views';link.addEventListener('click',()=>actions.selectNode(node));card.append(link);}
+      if(node.kind!=='collapsed-group'&&actions.selectNode&&(!scene.activity||node.item.references?.length||node.item.tests?.length)){const link=html(document,'button','node-connect','↗');link.type='button';link.setAttribute('aria-label','Connected views for '+node.item.name);link.title='Connected views and tests';link.addEventListener('click',()=>actions.selectNode(node));card.append(link);}
       if(node.rows.length){
         const body=html(document,'div','node-body');body.tabIndex=0;body.setAttribute('aria-label',p.name+' details');body.style.maxHeight=(node.height-node.headerHeight)+'px';
         for(const row of node.rows){const line=html(document,row.objectId?'button':'div','node-row'+(row.muted?' muted':''),row.text);if(row.objectId){line.type='button';line.dataset.objectId=row.objectId;line.title='Find this member in other views';line.addEventListener('click',()=>actions.selectObject?.(row.objectId));}body.append(line);}card.append(body);

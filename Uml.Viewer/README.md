@@ -8,6 +8,10 @@ Open [index.html](index.html) in a modern browser. No install, server, account o
 
 Choose an example, use **Open JSON**, or drop one `.json` file onto the page. Edit externally, then open/drop again. The viewer does not overwrite files. **JSON source** shows the exact imported text; **↓ JSON** downloads a copy.
 
+Diagrams are grouped by UML type in the sidebar. Open **Sequence diagrams**, **Activity diagrams**, or another type to choose a diagram. Each entry shows its JSON `title` and unique `id`; **Viewing** marks the active diagram. Its type, title and ID also appear above the canvas. Multiple parking/removal flows can therefore share a type without becoming ambiguous.
+
+Optional connected tests are visible through **↗**, member/connection inspection, and the toolbar's **Tests** button. Use `tests: null` for an unlinked object or flow. The shared catalogue stores names, files, symbols and optional HTTPS links; these references do not run tests or indicate pass/fail. See [Connected tests](CONNECTED-VIEWS.md#connected-tests).
+
 Choose **Garage · connected views** to try shared identity. Expand Garage service and click a method, or use a card's **↗** button. **Also appears in** groups results by diagram; additional calls to the same method stay available under “more appearances.” Jumps reveal collapsed groups/alternative frames and highlight matches. **← Back** restores the previous view, detail state, zoom and selection.
 
 Use **Open project** and choose `diagrams/garage-project` to load a shared catalogue and separate parking/removal files through `uml.project.json`. Source mode offers each original file and a combined document; downloading the combined document produces a standalone JSON that can be opened normally. Edit the files outside the viewer and reopen the folder to refresh.

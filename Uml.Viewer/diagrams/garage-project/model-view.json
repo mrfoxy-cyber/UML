@@ -9,6 +9,10 @@
         "garage",
         "spot",
         "vehicle"
+      ],
+      "tests": [
+        "garage.parking-suite",
+        "garage.removal-suite"
       ]
     }
   ]

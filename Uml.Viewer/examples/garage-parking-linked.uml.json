@@ -6,7 +6,8 @@
   "elements": {
     "operator": {
       "kind": "actor",
-      "name": "Garage operator"
+      "name": "Garage operator",
+      "tests": null
     },
     "service": {
       "kind": "class",
@@ -16,17 +17,23 @@
         {
           "id": "service.park",
           "kind": "operation",
-          "name": "+ Park(vehicle, garage, spotNumber?)"
+          "name": "+ Park(vehicle, garage, spotNumber?)",
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
+          ]
         },
         {
           "id": "service.parkNew",
           "kind": "operation",
-          "name": "- ParkNewVehicle(vehicle, garage, spotNumber?)"
+          "name": "- ParkNewVehicle(vehicle, garage, spotNumber?)",
+          "tests": null
         },
         {
           "id": "service.isParked",
           "kind": "operation",
-          "name": "+ IsParked(vehicle)"
+          "name": "+ IsParked(vehicle)",
+          "tests": null
         }
       ],
       "display": {
@@ -47,7 +54,10 @@
             "notes"
           ]
         }
-      }
+      },
+      "tests": [
+        "garage.service-suite"
+      ]
     },
     "garage": {
       "kind": "class",
@@ -57,23 +67,41 @@
         {
           "id": "garage.park",
           "kind": "operation",
-          "name": "+ Park(vehicle)"
+          "name": "+ Park(vehicle)",
+          "tests": [
+            "garage.park-success",
+            "garage.park-full"
+          ]
         },
         {
           "id": "garage.parkAt",
           "kind": "operation",
-          "name": "+ Park(vehicle, spot)"
+          "name": "+ Park(vehicle, spot)",
+          "tests": [
+            "garage.park-requested"
+          ]
         },
         {
           "id": "garage.remove",
           "kind": "operation",
-          "name": "+ Remove(registrationNumber)"
+          "name": "+ Remove(registrationNumber)",
+          "tests": [
+            "garage.remove-success",
+            "garage.remove-missing"
+          ]
         },
         {
           "id": "garage.find",
           "kind": "operation",
-          "name": "+ FindVehicleByRegistration(registrationNumber)"
+          "name": "+ FindVehicleByRegistration(registrationNumber)",
+          "tests": [
+            "garage.find-case"
+          ]
         }
+      ],
+      "tests": [
+        "garage.parking-suite",
+        "garage.removal-suite"
       ]
     },
     "spot": {
@@ -84,19 +112,23 @@
         {
           "id": "spot.fits",
           "kind": "operation",
-          "name": "+ Fits(vehicle)"
+          "name": "+ Fits(vehicle)",
+          "tests": null
         },
         {
           "id": "spot.park",
           "kind": "operation",
-          "name": "+ Park(vehicle)"
+          "name": "+ Park(vehicle)",
+          "tests": null
         },
         {
           "id": "spot.clear",
           "kind": "operation",
-          "name": "+ Clear()"
+          "name": "+ Clear()",
+          "tests": null
         }
-      ]
+      ],
+      "tests": null
     },
     "vehicle": {
       "kind": "class",
@@ -104,7 +136,8 @@
       "members": [
         "RegistrationNumber",
         "SpecificationDetails"
-      ]
+      ],
+      "tests": null
     }
   },
   "groups": [
@@ -175,6 +208,10 @@
           "label": "Park(vehicle, garage)",
           "references": [
             "service.park"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
@@ -185,7 +222,8 @@
           "label": "ParkNewVehicle(vehicle, garage, null)",
           "references": [
             "service.parkNew"
-          ]
+          ],
+          "tests": null
         },
         {
           "id": "already-parked",
@@ -195,7 +233,8 @@
           "label": "IsParked(vehicle)",
           "references": [
             "service.isParked"
-          ]
+          ],
+          "tests": null
         },
         {
           "id": "parking-result",
@@ -230,6 +269,10 @@
                   "label": "Park(vehicle)",
                   "references": [
                     "garage.park"
+                  ],
+                  "tests": [
+                    "garage.park-success",
+                    "garage.park-full"
                   ]
                 },
                 {
@@ -240,7 +283,8 @@
                   "label": "Fits(vehicle) during spot selection",
                   "references": [
                     "spot.fits"
-                  ]
+                  ],
+                  "tests": null
                 },
                 {
                   "id": "numbered-park",
@@ -250,6 +294,9 @@
                   "label": "Park(vehicle, availableSpot.Number)",
                   "references": [
                     "garage.parkAt"
+                  ],
+                  "tests": [
+                    "garage.park-requested"
                   ]
                 },
                 {
@@ -260,7 +307,8 @@
                   "label": "Fits(vehicle) during numbered parking",
                   "references": [
                     "spot.fits"
-                  ]
+                  ],
+                  "tests": null
                 },
                 {
                   "id": "assign",
@@ -270,7 +318,8 @@
                   "label": "Park(vehicle)",
                   "references": [
                     "spot.park"
-                  ]
+                  ],
+                  "tests": null
                 },
                 {
                   "id": "success",
@@ -280,6 +329,9 @@
                   "label": "ParkingResult.Completed(spot)",
                   "references": [
                     "garage.parkAt"
+                  ],
+                  "tests": [
+                    "garage.park-requested"
                   ]
                 },
                 {
@@ -290,6 +342,10 @@
                   "label": "ParkingResult: parked",
                   "references": [
                     "service.park"
+                  ],
+                  "tests": [
+                    "garage.move-workflow",
+                    "garage.reject-external"
                   ]
                 }
               ]
@@ -305,12 +361,21 @@
                   "label": "ParkingResult.Failed(error)",
                   "references": [
                     "service.park"
+                  ],
+                  "tests": [
+                    "garage.move-workflow",
+                    "garage.reject-external"
                   ]
                 }
               ]
             }
           ]
         }
+      ],
+      "tests": [
+        "garage.move-workflow",
+        "garage.park-success",
+        "garage.park-full"
       ]
     }
   },
@@ -320,7 +385,8 @@
         {
           "id": "start",
           "kind": "initial",
-          "name": "Start"
+          "name": "Start",
+          "tests": null
         },
         {
           "id": "request",
@@ -328,6 +394,10 @@
           "name": "Request parking",
           "references": [
             "service.park"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
@@ -338,6 +408,10 @@
             "service.park",
             "service.parkNew",
             "service.isParked"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
@@ -347,6 +421,10 @@
           "references": [
             "garage.park",
             "spot.fits"
+          ],
+          "tests": [
+            "garage.park-success",
+            "garage.park-full"
           ]
         },
         {
@@ -355,6 +433,10 @@
           "name": "Fitting spot found?",
           "references": [
             "garage.park"
+          ],
+          "tests": [
+            "garage.park-success",
+            "garage.park-full"
           ]
         },
         {
@@ -363,6 +445,9 @@
           "name": "Park at selected spot",
           "references": [
             "garage.parkAt"
+          ],
+          "tests": [
+            "garage.park-requested"
           ]
         },
         {
@@ -371,7 +456,8 @@
           "name": "Assign vehicle to spot",
           "references": [
             "spot.park"
-          ]
+          ],
+          "tests": null
         },
         {
           "id": "success",
@@ -379,6 +465,10 @@
           "name": "Return parking success",
           "references": [
             "service.park"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
@@ -387,74 +477,97 @@
           "name": "Return parking failure",
           "references": [
             "service.park"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
           "id": "end",
           "kind": "final",
-          "name": "Finish"
+          "name": "Finish",
+          "tests": null
         }
       ],
       "flows": [
         {
           "id": "begin",
           "from": "start",
-          "to": "request"
+          "to": "request",
+          "tests": null
         },
         {
           "id": "check",
           "from": "request",
-          "to": "validate"
+          "to": "validate",
+          "tests": null
         },
         {
           "id": "valid",
           "from": "validate",
           "to": "select",
-          "guard": "yes"
+          "guard": "yes",
+          "tests": null
         },
         {
           "id": "invalid",
           "from": "validate",
           "to": "failure",
-          "guard": "no"
+          "guard": "no",
+          "tests": null
         },
         {
           "id": "selected",
           "from": "select",
-          "to": "available"
+          "to": "available",
+          "tests": null
         },
         {
           "id": "found",
           "from": "available",
           "to": "numbered",
-          "guard": "yes"
+          "guard": "yes",
+          "tests": null
         },
         {
           "id": "full",
           "from": "available",
           "to": "failure",
-          "guard": "no"
+          "guard": "no",
+          "tests": [
+            "garage.park-full"
+          ]
         },
         {
           "id": "park",
           "from": "numbered",
-          "to": "assign"
+          "to": "assign",
+          "tests": null
         },
         {
           "id": "report",
           "from": "assign",
-          "to": "success"
+          "to": "success",
+          "tests": null
         },
         {
           "id": "done",
           "from": "success",
-          "to": "end"
+          "to": "end",
+          "tests": null
         },
         {
           "id": "failed",
           "from": "failure",
-          "to": "end"
+          "to": "end",
+          "tests": null
         }
+      ],
+      "tests": [
+        "garage.move-workflow",
+        "garage.park-success",
+        "garage.park-full"
       ]
     }
   },
@@ -468,25 +581,111 @@
         "garage",
         "spot",
         "vehicle"
+      ],
+      "tests": [
+        "garage.parking-suite",
+        "garage.removal-suite"
       ]
     },
     {
       "id": "parking-sequence",
       "type": "sequence",
       "title": "Garage · parking conversation",
-      "interaction": "parking"
+      "interaction": "parking",
+      "tests": null
     },
     {
       "id": "parking-communication",
       "type": "communication",
       "title": "Garage · parking collaborators",
-      "interaction": "parking"
+      "interaction": "parking",
+      "tests": null
     },
     {
       "id": "parking-activity",
       "type": "activity",
       "title": "Garage · parking workflow",
-      "activity": "parking"
+      "activity": "parking",
+      "tests": null
     }
-  ]
+  ],
+  "tests": {
+    "garage.parking-suite": {
+      "name": "Garage parking tests",
+      "kind": "suite",
+      "file": "Garage.Tests/GarageParkingTests.cs",
+      "symbol": "Garage.Tests.GarageParkingTests",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageParkingTests.cs"
+    },
+    "garage.removal-suite": {
+      "name": "Garage removal tests",
+      "kind": "suite",
+      "file": "Garage.Tests/GarageRemovalTests.cs",
+      "symbol": "Garage.Tests.GarageRemovalTests",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageRemovalTests.cs"
+    },
+    "garage.service-suite": {
+      "name": "Garage service tests",
+      "kind": "suite",
+      "file": "Garage.Tests/GarageServiceTests.cs",
+      "symbol": "Garage.Tests.GarageServiceTests",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageServiceTests.cs"
+    },
+    "garage.park-success": {
+      "name": "Parking updates vehicle and space counts",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageParkingTests.cs",
+      "symbol": "Garage.Tests.GarageParkingTests.Park_AddsVehicleAndUpdatesSpaceCounts",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageParkingTests.cs"
+    },
+    "garage.park-full": {
+      "name": "Parking fails when the garage is full",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageParkingTests.cs",
+      "symbol": "Garage.Tests.GarageParkingTests.Park_FailsWhenGarageIsFull",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageParkingTests.cs"
+    },
+    "garage.park-requested": {
+      "name": "Parking uses the requested spot",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageParkingTests.cs",
+      "symbol": "Garage.Tests.GarageParkingTests.ParkAtSpot_UsesRequestedSpot",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageParkingTests.cs"
+    },
+    "garage.remove-success": {
+      "name": "Removing a vehicle frees space",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageRemovalTests.cs",
+      "symbol": "Garage.Tests.GarageRemovalTests.Remove_RemovesVehicleAndFreesSpace",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageRemovalTests.cs"
+    },
+    "garage.remove-missing": {
+      "name": "Removing an unknown registration fails",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageRemovalTests.cs",
+      "symbol": "Garage.Tests.GarageRemovalTests.Remove_ReturnsFailureForUnknownRegistration",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageRemovalTests.cs"
+    },
+    "garage.find-case": {
+      "name": "Registration lookup ignores case",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageRemovalTests.cs",
+      "symbol": "Garage.Tests.GarageRemovalTests.FindVehicleByRegistration_IgnoresCase",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageRemovalTests.cs"
+    },
+    "garage.move-workflow": {
+      "name": "Remove before parking in another garage",
+      "kind": "workflow",
+      "file": "Garage.Tests/GarageServiceWorkflowTests.cs",
+      "symbol": "Garage.Tests.GarageServiceWorkflowTests.Park_VehicleMustBeRemovedBeforeParkingInAnotherGarage",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageServiceWorkflowTests.cs"
+    },
+    "garage.reject-external": {
+      "name": "Parking rejects vehicles outside the catalogue",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageServiceWorkflowTests.cs",
+      "symbol": "Garage.Tests.GarageServiceWorkflowTests.Park_RejectsVehicleOutsideTheCatalog",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageServiceWorkflowTests.cs"
+    }
+  }
 }

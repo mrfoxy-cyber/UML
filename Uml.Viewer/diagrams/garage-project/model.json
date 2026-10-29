@@ -2,7 +2,8 @@
   "elements": {
     "operator": {
       "kind": "actor",
-      "name": "Garage operator"
+      "name": "Garage operator",
+      "tests": null
     },
     "service": {
       "kind": "class",
@@ -12,17 +13,23 @@
         {
           "id": "service.park",
           "kind": "operation",
-          "name": "+ Park(vehicle, garage, spotNumber?)"
+          "name": "+ Park(vehicle, garage, spotNumber?)",
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
+          ]
         },
         {
           "id": "service.parkNew",
           "kind": "operation",
-          "name": "- ParkNewVehicle(vehicle, garage, spotNumber?)"
+          "name": "- ParkNewVehicle(vehicle, garage, spotNumber?)",
+          "tests": null
         },
         {
           "id": "service.isParked",
           "kind": "operation",
-          "name": "+ IsParked(vehicle)"
+          "name": "+ IsParked(vehicle)",
+          "tests": null
         }
       ],
       "display": {
@@ -43,7 +50,10 @@
             "notes"
           ]
         }
-      }
+      },
+      "tests": [
+        "garage.service-suite"
+      ]
     },
     "garage": {
       "kind": "class",
@@ -53,23 +63,41 @@
         {
           "id": "garage.park",
           "kind": "operation",
-          "name": "+ Park(vehicle)"
+          "name": "+ Park(vehicle)",
+          "tests": [
+            "garage.park-success",
+            "garage.park-full"
+          ]
         },
         {
           "id": "garage.parkAt",
           "kind": "operation",
-          "name": "+ Park(vehicle, spot)"
+          "name": "+ Park(vehicle, spot)",
+          "tests": [
+            "garage.park-requested"
+          ]
         },
         {
           "id": "garage.remove",
           "kind": "operation",
-          "name": "+ Remove(registrationNumber)"
+          "name": "+ Remove(registrationNumber)",
+          "tests": [
+            "garage.remove-success",
+            "garage.remove-missing"
+          ]
         },
         {
           "id": "garage.find",
           "kind": "operation",
-          "name": "+ FindVehicleByRegistration(registrationNumber)"
+          "name": "+ FindVehicleByRegistration(registrationNumber)",
+          "tests": [
+            "garage.find-case"
+          ]
         }
+      ],
+      "tests": [
+        "garage.parking-suite",
+        "garage.removal-suite"
       ]
     },
     "spot": {
@@ -80,19 +108,23 @@
         {
           "id": "spot.fits",
           "kind": "operation",
-          "name": "+ Fits(vehicle)"
+          "name": "+ Fits(vehicle)",
+          "tests": null
         },
         {
           "id": "spot.park",
           "kind": "operation",
-          "name": "+ Park(vehicle)"
+          "name": "+ Park(vehicle)",
+          "tests": null
         },
         {
           "id": "spot.clear",
           "kind": "operation",
-          "name": "+ Clear()"
+          "name": "+ Clear()",
+          "tests": null
         }
-      ]
+      ],
+      "tests": null
     },
     "vehicle": {
       "kind": "class",
@@ -100,7 +132,87 @@
       "members": [
         "RegistrationNumber",
         "SpecificationDetails"
-      ]
+      ],
+      "tests": null
+    }
+  },
+  "tests": {
+    "garage.parking-suite": {
+      "name": "Garage parking tests",
+      "kind": "suite",
+      "file": "Garage.Tests/GarageParkingTests.cs",
+      "symbol": "Garage.Tests.GarageParkingTests",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageParkingTests.cs"
+    },
+    "garage.removal-suite": {
+      "name": "Garage removal tests",
+      "kind": "suite",
+      "file": "Garage.Tests/GarageRemovalTests.cs",
+      "symbol": "Garage.Tests.GarageRemovalTests",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageRemovalTests.cs"
+    },
+    "garage.service-suite": {
+      "name": "Garage service tests",
+      "kind": "suite",
+      "file": "Garage.Tests/GarageServiceTests.cs",
+      "symbol": "Garage.Tests.GarageServiceTests",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageServiceTests.cs"
+    },
+    "garage.park-success": {
+      "name": "Parking updates vehicle and space counts",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageParkingTests.cs",
+      "symbol": "Garage.Tests.GarageParkingTests.Park_AddsVehicleAndUpdatesSpaceCounts",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageParkingTests.cs"
+    },
+    "garage.park-full": {
+      "name": "Parking fails when the garage is full",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageParkingTests.cs",
+      "symbol": "Garage.Tests.GarageParkingTests.Park_FailsWhenGarageIsFull",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageParkingTests.cs"
+    },
+    "garage.park-requested": {
+      "name": "Parking uses the requested spot",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageParkingTests.cs",
+      "symbol": "Garage.Tests.GarageParkingTests.ParkAtSpot_UsesRequestedSpot",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageParkingTests.cs"
+    },
+    "garage.remove-success": {
+      "name": "Removing a vehicle frees space",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageRemovalTests.cs",
+      "symbol": "Garage.Tests.GarageRemovalTests.Remove_RemovesVehicleAndFreesSpace",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageRemovalTests.cs"
+    },
+    "garage.remove-missing": {
+      "name": "Removing an unknown registration fails",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageRemovalTests.cs",
+      "symbol": "Garage.Tests.GarageRemovalTests.Remove_ReturnsFailureForUnknownRegistration",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageRemovalTests.cs"
+    },
+    "garage.find-case": {
+      "name": "Registration lookup ignores case",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageRemovalTests.cs",
+      "symbol": "Garage.Tests.GarageRemovalTests.FindVehicleByRegistration_IgnoresCase",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageRemovalTests.cs"
+    },
+    "garage.move-workflow": {
+      "name": "Remove before parking in another garage",
+      "kind": "workflow",
+      "file": "Garage.Tests/GarageServiceWorkflowTests.cs",
+      "symbol": "Garage.Tests.GarageServiceWorkflowTests.Park_VehicleMustBeRemovedBeforeParkingInAnotherGarage",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageServiceWorkflowTests.cs"
+    },
+    "garage.reject-external": {
+      "name": "Parking rejects vehicles outside the catalogue",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageServiceWorkflowTests.cs",
+      "symbol": "Garage.Tests.GarageServiceWorkflowTests.Park_RejectsVehicleOutsideTheCatalog",
+      "url": "https://github.com/mrfoxy-cyber/Garage-v2/blob/main/Garage.Tests/GarageServiceWorkflowTests.cs"
     }
   },
   "groups": [

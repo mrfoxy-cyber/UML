@@ -25,13 +25,33 @@
   function header(){
     $('document-name').textContent=session.data.title;$('file-name').textContent=session.filename;$('view-count').textContent=session.data.views.length;
     $('view-title').textContent=view.title;$('type-label').textContent=U.Contract.TYPES[view.type].toUpperCase();$('origin-label').textContent=session.example?'EXAMPLE':'YOUR JSON';
+    $('view-id').textContent=view.id;
+    const testIds=new Set(diagramTestItems().flatMap(([,item])=>item.tests||[]));$('tests-button').textContent='Tests · '+testIds.size;
     $('view-subtitle').textContent=({class:'Explore classes, their details and the relationships between them.',aggregation:'See the whole, its parts and the connections that bring them together.',component:'Follow dependencies across the building blocks of a system.',sequence:'Follow a conversation, one message at a time.',communication:'A different perspective on the same shared interaction.',activity:'Follow actions and decisions, connected to the same classes and operations.'})[view.type];
     $('state-badge').textContent=session.example?'Example · version 1':'Local file · version 1';$('source-code').textContent=session.raw;
     const sources=$('source-file');sources.replaceChildren();sources.hidden=!session.project;$('source-label').textContent=session.project?'Project sources · read only':'Original JSON · read only';
     if(session.project){const combined=html('option','','Combined document (downloadable)');combined.value='';sources.append(combined);for(const path of session.project.sources.keys()){const option=html('option','',path);option.value=path;sources.append(option);}}
-    const nav=$('view-nav');nav.replaceChildren();
-    for(const item of session.data.views){const button=html('button','nav-view');button.type='button';button.dataset.viewId=item.id;if(item.id===view.id)button.setAttribute('aria-current','page');button.append(html('span','nav-glyph',glyphs[item.type]),(()=>{const text=html('span');text.append(html('strong','',item.title),html('small','',U.Contract.TYPES[item.type]));return text;})());button.addEventListener('click',()=>selectView(item.id));nav.append(button);}
+    renderNavigation();
     modeUI();
+  }
+  function renderNavigation(){
+    const nav=$('view-nav'),types=new Map();nav.replaceChildren();
+    for(const item of session.data.views){if(!types.has(item.type))types.set(item.type,[]);types.get(item.type).push(item);}
+    for(const [type,items] of types){
+      const open=session.navOpen.has(type),active=view.type===type,section=html('section','nav-type'+(active?' is-current':''));section.dataset.diagramType=type;
+      const heading=html('button','nav-type-toggle');heading.type='button';heading.dataset.typeToggle=type;heading.setAttribute('aria-expanded',String(open));heading.setAttribute('aria-controls','nav-type-'+type);
+      heading.append(html('span','nav-glyph',glyphs[type]),html('strong','nav-type-name',U.Contract.TYPES[type]+'s'),html('span','nav-type-count',items.length),html('span','nav-type-chevron',open?'⌄':'›'));
+      if(active){const marker=html('span','nav-active-dot');marker.setAttribute('aria-label','Contains the current diagram');heading.append(marker);}
+      heading.addEventListener('click',()=>{if(session.navOpen.has(type))session.navOpen.delete(type);else session.navOpen.add(type);renderNavigation();const replacement=[...nav.querySelectorAll('[data-type-toggle]')].find(b=>b.dataset.typeToggle===type);replacement?.focus();});
+      const list=html('div','nav-type-items');list.id='nav-type-'+type;list.hidden=!open;
+      for(const item of items){
+        const button=html('button','nav-view');button.type='button';button.dataset.viewId=item.id;button.title=item.title+' · '+item.id;
+        const label=html('span','nav-view-label');label.append(html('strong','',item.title),html('small','nav-diagram-id',item.id));button.append(label);
+        if(item.id===view.id){button.setAttribute('aria-current','page');button.append(html('span','nav-view-current','Viewing'));}
+        button.addEventListener('click',()=>selectView(item.id));list.append(button);
+      }
+      section.append(heading,list);nav.append(section);
+    }
   }
   function draw(result){
     scene=result;world.style.width=scene.width+'px';world.style.height=scene.height+'px';
@@ -47,7 +67,7 @@
   async function loadText(raw,filename='document.json',example=false,ticket,project=null){
     const token=ticket??++importTicket;
     try{
-      const data=U.Contract.parse(raw),candidate={data,raw,filename,example,project,states:new Map(),index:U.Connectivity.index(data)},selected=data.views[0];
+      const data=U.Contract.parse(raw),candidate={data,raw,filename,example,project,states:new Map(),navOpen:new Set([data.views[0].type]),index:U.Connectivity.index(data)},selected=data.views[0];
       if(!elk)throw new Error('The local layout library is missing. Keep the vendor folder alongside index.html.');
       status.textContent='Arranging your diagram…';
       const result=await U.Renderers.get(selected.type).build(data,selected,context(candidate,selected));
@@ -87,7 +107,7 @@
   }
   async function selectView(id){
     if(!session)return false;const selected=session.data.views.find(v=>v.id===id);if(!selected)return false;
-    saveCamera();view=selected;selection=null;const saved=stateFor(session,id).camera;$('inspector').hidden=true;$('element-search').value='';header();
+    saveCamera();view=selected;session.navOpen.add(selected.type);selection=null;const saved=stateFor(session,id).camera;$('inspector').hidden=true;$('element-search').value='';header();
     const changed=await render({resetCamera:!saved});if(changed&&saved){restoreCamera(saved);fitted=saved.fitted;transform();}return changed;
   }
   async function toggle(key,item,category='element'){
@@ -116,13 +136,14 @@
     panel.append(html('h3','',object.name),html('small','',object.kind+' · '+id));
     if(object.owner)panel.append(html('p','', 'Owned by '+session.index.catalog.get(object.owner).name));
     if(object.notes)panel.append(html('p','',object.notes));
+    renderTests(panel,object);
     if(object.references?.length){panel.append(html('h4','','References'));referenceButtons(panel,object.references);}
     const matches=U.Connectivity.matches(session.index,id);
     for(const [label,items] of [['Also appears in',matches.direct],['Related through '+(object.owner?'owning class':'members'),matches.related]]){
       if(!items.length)continue;panel.append(html('h4','',label));
       const groups=new Map();for(const occurrence of items){if(!groups.has(occurrence.viewId))groups.set(occurrence.viewId,[]);groups.get(occurrence.viewId).push(occurrence);}
       const makeButton=occurrence=>{const button=html('button','occurrence-link');button.type='button';button.dataset.occurrenceKey=occurrence.key;
-        button.append(html('strong','',occurrence.viewTitle+(occurrence.viewId===view.id?' · current':'')),html('small','',U.Contract.TYPES[occurrence.type]+' · '+occurrence.kind),html('span','',occurrence.label));
+        button.append(html('strong','',occurrence.viewTitle+(occurrence.viewId===view.id?' · current':'')),html('small','',U.Contract.TYPES[occurrence.type]+' · '+occurrence.kind+' · '+occurrence.viewId),html('span','',occurrence.label));
         button.addEventListener('click',()=>navigateTo(occurrence.key,id));return button;
       };
       for(const entries of groups.values()){
@@ -137,10 +158,27 @@
   function referenceButtons(container,references){
     for(const id of references||[]){const object=session.index.catalog.get(id);if(!object)continue;const button=html('button','reference-link',object.name+' ↗');button.type='button';button.dataset.referenceId=id;button.addEventListener('click',()=>selectObject(id));container.append(button);}
   }
+  function renderTests(container,item,label='Connected tests'){
+    const section=html('section','test-links');section.append(html('h4','',label));
+    if(!item.tests?.length)section.append(html('p','test-empty','No tests linked.'));
+    else for(const id of item.tests){
+      const test=session.data.tests[id],entry=html('article','test-reference');entry.dataset.testId=id;
+      const name=html(test.url?'a':'strong','test-name',test.name);if(test.url){name.href=test.url;name.target='_blank';name.rel='noopener noreferrer';}entry.append(name,html('small','',(test.kind?test.kind+' · ':'')+id));
+      if(test.file)entry.append(html('code','test-file',test.file));if(test.symbol)entry.append(html('code','test-symbol',test.symbol));if(test.notes)entry.append(html('p','',test.notes));section.append(entry);
+    }
+    section.append(html('small','test-note','Linked references · not test results'));container.append(section);
+  }
+  function diagramTestItems(){
+    const items=[['Diagram tests',view]];if(view.interaction)items.push(['Interaction tests',session.data.interactions[view.interaction]]);if(view.activity)items.push(['Activity tests',session.data.activities[view.activity]]);return items;
+  }
+  function inspectDiagramTests(){
+    if(!session)return;const panel=$('inspector-content');panel.replaceChildren();$('inspector').hidden=false;$('inspector').scrollTop=0;panel.append(html('h3','',view.title),html('small','',view.id));for(const [label,item] of diagramTestItems())renderTests(panel,item,label);
+  }
   function selectNode(node){
     if(view.type!=='activity')return selectObject(node.sourceId);
     selection=null;highlight();
     const panel=$('inspector-content');panel.replaceChildren();$('inspector').hidden=false;panel.append(html('h3','',node.item.name));
+    renderTests(panel,node.item);
     if(node.item.notes)panel.append(html('p','',node.item.notes));referenceButtons(panel,node.item.references);
     if(!node.item.references?.length)panel.append(html('p','', 'No shared object references on this step. Add references in JSON to connect it.'));
   }
@@ -174,7 +212,7 @@
       const item=html('article');item.append(html('small','',(value.number?value.number+' · ':'')+(value.kind||edge.kind)),html('p','',name(value.from)+' → '+name(value.to)));
       if(value.label)item.append(html('code','',value.label));
       if(value.guards?.length)item.append(html('p','',value.guards.map(g=>'['+g+']').join(' AND ')));
-      item.append(html('small','',value.id));referenceButtons(item,value.references);
+      item.append(html('small','',value.id));renderTests(item,value);referenceButtons(item,value.references);
       if(value.parents){const sequence=session.data.views.find(v=>v.type==='sequence'&&v.interaction===view.interaction);if(sequence){const button=html('button','secondary-button','View in sequence →');button.type='button';button.addEventListener('click',async()=>{
         const occurrence=session.index.occurrences.find(o=>o.viewId===sequence.id&&o.kind==='message'&&o.localId===value.id);
         if(occurrence)await navigateTo(occurrence.key,value.references?.[0]);centerEdge(value.id);
@@ -208,6 +246,7 @@
   document.addEventListener('dragleave',()=>{if(--dragDepth<=0){dragDepth=0;$('drop-overlay').hidden=true;}});
   document.addEventListener('drop',event=>{event.preventDefault();dragDepth=0;$('drop-overlay').hidden=true;const files=[...event.dataTransfer?.files||[]];if(files.length!==1){error(new Error('Drop one JSON document at a time.'));return;}loadFile(files[0]);});
   $('diagram-tab').addEventListener('click',()=>setMode('diagram'));$('json-tab').addEventListener('click',()=>setMode('source'));
+  $('tests-button').addEventListener('click',inspectDiagramTests);
   $('back-button').addEventListener('click',()=>back());
   $('zoom-in').addEventListener('click',()=>zoom(camera.zoom*1.2));$('zoom-out').addEventListener('click',()=>zoom(camera.zoom/1.2));$('fit-button').addEventListener('click',()=>fit());$('actual-button').addEventListener('click',()=>zoom(1));
   $('reset-button').addEventListener('click',()=>{if(!session)return;currentState().open.clear();currentState().reveal.clear();$('element-search').value='';render({resetCamera:true});});

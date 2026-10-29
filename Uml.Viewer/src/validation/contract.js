@@ -14,21 +14,23 @@
   const state=object({name:text(240),show:{...array({enum:['name','kind','members','notes','count','steps','guards']},7,1),uniqueItems:true}});
   const display=object({initial:{enum:['collapsed','expanded']},collapsible:{type:'boolean'},collapsed:state,expanded:state});
   const references={...array(ID,30),uniqueItems:true};
-  const member=object({id:ID,kind:{enum:['operation','attribute']},name:text(1600),notes:text(6000)},['id','kind','name']);
-  const element=object({kind:{enum:ELEMENTS},name:text(240),members:array({oneOf:[text(1600),ref('member')]},200),references,notes:text(6000),display:ref('display')},['kind','name']);
+  const tests={oneOf:[{type:'null'},{...array(ID,100),uniqueItems:true}]};
+  const testCase=object({name:text(240),kind:{enum:['suite','unit','integration','workflow']},file:text(1000),symbol:text(1000),url:text(2000),notes:text(6000)},['name']);
+  const member=object({id:ID,kind:{enum:['operation','attribute']},name:text(1600),notes:text(6000),tests},['id','kind','name']);
+  const element=object({kind:{enum:ELEMENTS},name:text(240),members:array({oneOf:[text(1600),ref('member')]},200),references,notes:text(6000),display:ref('display'),tests},['kind','name']);
   const group=object({id:ID,name:text(240),members:{...ids,minItems:1},notes:text(6000),display:ref('display')},['id','name','members']);
-  const relation=object({id:ID,kind:{enum:RELATIONS},from:ID,to:ID,label:text(500),fromMultiplicity:text(40),toMultiplicity:text(40)},['id','kind','from','to']);
-  const message=object({id:ID,kind:{enum:['call','reply']},from:ID,to:ID,label:text(1200),references},['id','kind','from','to','label']);
+  const relation=object({id:ID,kind:{enum:RELATIONS},from:ID,to:ID,label:text(500),fromMultiplicity:text(40),toMultiplicity:text(40),tests},['id','kind','from','to']);
+  const message=object({id:ID,kind:{enum:['call','reply']},from:ID,to:ID,label:text(1200),references,tests},['id','kind','from','to','label']);
   const alternative=object({id:ID,kind:{const:'alt'},name:text(240),display:ref('display'),branches:array(object({guard:text(500),steps:array(ref('step'),600)},['guard','steps']),8,2)},['id','kind','branches']);
-  const interaction=object({story:ID,scenario:ID,participants:{...ids,minItems:1,maxItems:24},steps:array(ref('step'),600,1)},['participants','steps']);
+  const interaction=object({story:ID,scenario:ID,participants:{...ids,minItems:1,maxItems:24},steps:array(ref('step'),600,1),tests},['participants','steps']);
   const dictionary=(values,max)=>({type:'object',propertyNames:ID,additionalProperties:values,maxProperties:max});
-  const activityNode=object({id:ID,kind:{enum:['initial','final','action','decision','merge']},name:text(240),notes:text(6000),references,display:ref('display')},['id','kind','name']);
-  const activity=object({nodes:array(ref('activityNode'),150,1),flows:array(object({id:ID,from:ID,to:ID,guard:text(500)},['id','from','to']),600)},['nodes','flows']);
+  const activityNode=object({id:ID,kind:{enum:['initial','final','action','decision','merge']},name:text(240),notes:text(6000),references,display:ref('display'),tests},['id','kind','name']);
+  const activity=object({nodes:array(ref('activityNode'),150,1),flows:array(object({id:ID,from:ID,to:ID,guard:text(500),tests},['id','from','to']),600),tests},['nodes','flows']);
   const schema={
     $schema:'https://json-schema.org/draft/2020-12/schema',
     $id:'urn:uml-json-viewer:document:1',title:'UML viewer document',
-    ...object({$schema:text(500),version:{const:1},id:ID,title:text(240),elements:{...dictionary(ref('element'),150),minProperties:1},groups:array(ref('group'),50),relationships:array(ref('relationship'),600),interactions:dictionary(ref('interaction'),12),activities:dictionary(ref('activity'),12),views:array(object({id:ID,type:{enum:SUPPORTED},title:text(240),elements:ids,interaction:ID,activity:ID},['id','type','title']),30,1)},['version','id','title','elements','views']),
-    $defs:{display,member,element,group,relationship:relation,step:{oneOf:[message,alternative]},interaction,activityNode,activity}
+    ...object({$schema:text(500),version:{const:1},id:ID,title:text(240),elements:{...dictionary(ref('element'),150),minProperties:1},tests:{oneOf:[{type:'null'},dictionary(ref('testCase'),600)]},groups:array(ref('group'),50),relationships:array(ref('relationship'),600),interactions:dictionary(ref('interaction'),12),activities:dictionary(ref('activity'),12),views:array(object({id:ID,type:{enum:SUPPORTED},title:text(240),elements:ids,interaction:ID,activity:ID,tests},['id','type','title']),30,1)},['version','id','title','elements','views']),
+    $defs:{display,testCase,member,element,group,relationship:relation,step:{oneOf:[message,alternative]},interaction,activityNode,activity}
   };
   class InputError extends Error {
     constructor(path,message){super(message);this.name='InputError';this.path=path;}
@@ -65,7 +67,7 @@
     if(Object.hasOwn(rule,'const')&&value!==rule.const)fail(path,`Expected ${JSON.stringify(rule.const)}.`);
     if(rule.enum&&!rule.enum.includes(value))fail(path,`Expected one of: ${rule.enum.join(', ')}. Received ${JSON.stringify(value)}.`);
     if(rule.type){
-      const valid=rule.type==='array'?Array.isArray(value):rule.type==='object'?value!==null&&typeof value==='object'&&!Array.isArray(value):typeof value===rule.type;
+      const valid=rule.type==='null'?value===null:rule.type==='array'?Array.isArray(value):rule.type==='object'?value!==null&&typeof value==='object'&&!Array.isArray(value):typeof value===rule.type;
       if(!valid)fail(path,`Expected ${rule.type}.`);
     }
     if(typeof value==='string'){
@@ -99,7 +101,11 @@
       if(!SUPPORTED.includes(view.type))fail(`$.views[${i}].type`,`${TYPES[view.type]} is recognized but is not implemented in this release.`);
     });
     check(document,schema);
+    const testIds=new Set(Object.keys(document.tests||{}));
+    const checkTests=(item,path)=>{for(const [i,id] of (item.tests||[]).entries())if(!testIds.has(id))fail(`${path}.tests[${i}]`,`Unknown test "${id}". Define it in the document test catalogue or use null.`);};
+    for(const [id,test] of Object.entries(document.tests||{}))if(test.url){let url;try{url=new URL(test.url);}catch{fail('$.tests.'+id+'.url','Use an absolute HTTPS URL.');}if(url.protocol!=='https:')fail('$.tests.'+id+'.url','Use an absolute HTTPS URL.');}
     const elements=new Map(Object.entries(document.elements));
+    for(const [id,item] of elements){checkTests(item,'$.elements.'+id);(item.members||[]).forEach((m,i)=>{if(typeof m==='object')checkTests(m,`$.elements.${id}.members[${i}]`);});}
     const shared=new Set(elements.keys());let memberCount=0;
     for(const [owner,item] of elements)for(const [i,member] of (item.members||[]).entries())if(typeof member==='object'){
       const path=`$.elements.${owner}.members[${i}]`;
@@ -119,7 +125,7 @@
     });
     for(const [id,element] of elements)displayFields(element.display,['name','kind','members','notes','count'],`$.elements.${id}.display`);
     (document.relationships||[]).forEach((r,i)=>{
-      const path=`$.relationships[${i}]`;exists(r.from,path+'.from');exists(r.to,path+'.to');
+      const path=`$.relationships[${i}]`;exists(r.from,path+'.from');exists(r.to,path+'.to');checkTests(r,path);
       if(r.kind==='inheritance'&&(elements.get(r.from).kind!==elements.get(r.to).kind||!['class','interface'].includes(elements.get(r.from).kind)))fail(path,'Inheritance connects a class to a class, or an interface to an interface.');
       if(r.kind==='implementation'&&(elements.get(r.from).kind!=='class'||elements.get(r.to).kind!=='interface'))fail(path,'Implementation points from a class to an interface.');
     });
@@ -129,7 +135,7 @@
     for(const id of parents.keys())walk(id);
     let totalSteps=0;
     for(const [id,interaction] of Object.entries(document.interactions||{})){
-      const path='$.interactions.'+id;interaction.participants.forEach((p,i)=>exists(p,`${path}.participants[${i}]`));
+      const path='$.interactions.'+id;checkTests(interaction,path);interaction.participants.forEach((p,i)=>exists(p,`${path}.participants[${i}]`));
       const participants=new Set(interaction.participants),stepIds=new Set();
       function steps(items,base,depth=0){
         if(depth>6)fail(base,'Alternative nesting is limited to six levels.');
@@ -137,14 +143,14 @@
           const p=`${base}[${i}]`;if(++totalSteps>600)fail(p,'Maximum 600 interaction steps per document.');
           if(stepIds.has(step.id))fail(p+'.id',`Duplicate step ID "${step.id}" in this interaction.`);stepIds.add(step.id);
           if(step.kind==='alt'){displayFields(step.display,['name','count','steps','guards'],p+'.display');step.branches.forEach((b,j)=>steps(b.steps,`${p}.branches[${j}].steps`,depth+1));}
-          else {for(const end of ['from','to'])if(!participants.has(step[end]))fail(p+'.'+end,`"${step[end]}" is not a participant in this interaction.`);checkReferences(step,p);}
+          else {for(const end of ['from','to'])if(!participants.has(step[end]))fail(p+'.'+end,`"${step[end]}" is not a participant in this interaction.`);checkReferences(step,p);checkTests(step,p);}
         });
       }
       steps(interaction.steps,path+'.steps');
     }
     let activityNodes=0,activityFlows=0;
     for(const [id,activity] of Object.entries(document.activities||{})){
-      const path='$.activities.'+id;unique(activity.nodes,path+'.nodes');unique(activity.flows,path+'.flows');
+      const path='$.activities.'+id;checkTests(activity,path);activity.nodes.forEach((n,i)=>checkTests(n,`${path}.nodes[${i}]`));activity.flows.forEach((f,i)=>checkTests(f,`${path}.flows[${i}]`));unique(activity.nodes,path+'.nodes');unique(activity.flows,path+'.flows');
       activityNodes+=activity.nodes.length;activityFlows+=activity.flows.length;
       if(activityNodes>300||activityFlows>1200)fail(path,'Maximum 300 activity nodes and 1200 flows per document.');
       const nodes=new Map(activity.nodes.map(n=>[n.id,n]));
@@ -153,7 +159,7 @@
       for(const node of activity.nodes)if(node.kind==='decision'&&activity.flows.filter(f=>f.from===node.id).some(f=>!f.guard))fail(path+'.flows','Every outgoing decision flow needs a guard.');
     }
     document.views.forEach((view,i)=>{
-      const path=`$.views[${i}]`;
+      const path=`$.views[${i}]`;checkTests(view,path);
       if(view.type==='activity'){
         if(!view.activity||!Object.hasOwn(document.activities||{},view.activity))fail(path+'.activity','Reference an activity defined in this document.');
         if(view.elements||view.interaction)fail(path,'Activity views select an activity, not elements or an interaction.');

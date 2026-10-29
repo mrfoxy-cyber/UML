@@ -17,6 +17,10 @@
           "label": "Park(vehicle, garage)",
           "references": [
             "service.park"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
@@ -27,7 +31,8 @@
           "label": "ParkNewVehicle(vehicle, garage, null)",
           "references": [
             "service.parkNew"
-          ]
+          ],
+          "tests": null
         },
         {
           "id": "already-parked",
@@ -37,7 +42,8 @@
           "label": "IsParked(vehicle)",
           "references": [
             "service.isParked"
-          ]
+          ],
+          "tests": null
         },
         {
           "id": "parking-result",
@@ -72,6 +78,10 @@
                   "label": "Park(vehicle)",
                   "references": [
                     "garage.park"
+                  ],
+                  "tests": [
+                    "garage.park-success",
+                    "garage.park-full"
                   ]
                 },
                 {
@@ -82,7 +92,8 @@
                   "label": "Fits(vehicle) during spot selection",
                   "references": [
                     "spot.fits"
-                  ]
+                  ],
+                  "tests": null
                 },
                 {
                   "id": "numbered-park",
@@ -92,6 +103,9 @@
                   "label": "Park(vehicle, availableSpot.Number)",
                   "references": [
                     "garage.parkAt"
+                  ],
+                  "tests": [
+                    "garage.park-requested"
                   ]
                 },
                 {
@@ -102,7 +116,8 @@
                   "label": "Fits(vehicle) during numbered parking",
                   "references": [
                     "spot.fits"
-                  ]
+                  ],
+                  "tests": null
                 },
                 {
                   "id": "assign",
@@ -112,7 +127,8 @@
                   "label": "Park(vehicle)",
                   "references": [
                     "spot.park"
-                  ]
+                  ],
+                  "tests": null
                 },
                 {
                   "id": "success",
@@ -122,6 +138,9 @@
                   "label": "ParkingResult.Completed(spot)",
                   "references": [
                     "garage.parkAt"
+                  ],
+                  "tests": [
+                    "garage.park-requested"
                   ]
                 },
                 {
@@ -132,6 +151,10 @@
                   "label": "ParkingResult: parked",
                   "references": [
                     "service.park"
+                  ],
+                  "tests": [
+                    "garage.move-workflow",
+                    "garage.reject-external"
                   ]
                 }
               ]
@@ -147,12 +170,21 @@
                   "label": "ParkingResult.Failed(error)",
                   "references": [
                     "service.park"
+                  ],
+                  "tests": [
+                    "garage.move-workflow",
+                    "garage.reject-external"
                   ]
                 }
               ]
             }
           ]
         }
+      ],
+      "tests": [
+        "garage.move-workflow",
+        "garage.park-success",
+        "garage.park-full"
       ]
     }
   },
@@ -162,7 +194,8 @@
         {
           "id": "start",
           "kind": "initial",
-          "name": "Start"
+          "name": "Start",
+          "tests": null
         },
         {
           "id": "request",
@@ -170,6 +203,10 @@
           "name": "Request parking",
           "references": [
             "service.park"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
@@ -180,6 +217,10 @@
             "service.park",
             "service.parkNew",
             "service.isParked"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
@@ -189,6 +230,10 @@
           "references": [
             "garage.park",
             "spot.fits"
+          ],
+          "tests": [
+            "garage.park-success",
+            "garage.park-full"
           ]
         },
         {
@@ -197,6 +242,10 @@
           "name": "Fitting spot found?",
           "references": [
             "garage.park"
+          ],
+          "tests": [
+            "garage.park-success",
+            "garage.park-full"
           ]
         },
         {
@@ -205,6 +254,9 @@
           "name": "Park at selected spot",
           "references": [
             "garage.parkAt"
+          ],
+          "tests": [
+            "garage.park-requested"
           ]
         },
         {
@@ -213,7 +265,8 @@
           "name": "Assign vehicle to spot",
           "references": [
             "spot.park"
-          ]
+          ],
+          "tests": null
         },
         {
           "id": "success",
@@ -221,6 +274,10 @@
           "name": "Return parking success",
           "references": [
             "service.park"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
@@ -229,74 +286,97 @@
           "name": "Return parking failure",
           "references": [
             "service.park"
+          ],
+          "tests": [
+            "garage.move-workflow",
+            "garage.reject-external"
           ]
         },
         {
           "id": "end",
           "kind": "final",
-          "name": "Finish"
+          "name": "Finish",
+          "tests": null
         }
       ],
       "flows": [
         {
           "id": "begin",
           "from": "start",
-          "to": "request"
+          "to": "request",
+          "tests": null
         },
         {
           "id": "check",
           "from": "request",
-          "to": "validate"
+          "to": "validate",
+          "tests": null
         },
         {
           "id": "valid",
           "from": "validate",
           "to": "select",
-          "guard": "yes"
+          "guard": "yes",
+          "tests": null
         },
         {
           "id": "invalid",
           "from": "validate",
           "to": "failure",
-          "guard": "no"
+          "guard": "no",
+          "tests": null
         },
         {
           "id": "selected",
           "from": "select",
-          "to": "available"
+          "to": "available",
+          "tests": null
         },
         {
           "id": "found",
           "from": "available",
           "to": "numbered",
-          "guard": "yes"
+          "guard": "yes",
+          "tests": null
         },
         {
           "id": "full",
           "from": "available",
           "to": "failure",
-          "guard": "no"
+          "guard": "no",
+          "tests": [
+            "garage.park-full"
+          ]
         },
         {
           "id": "park",
           "from": "numbered",
-          "to": "assign"
+          "to": "assign",
+          "tests": null
         },
         {
           "id": "report",
           "from": "assign",
-          "to": "success"
+          "to": "success",
+          "tests": null
         },
         {
           "id": "done",
           "from": "success",
-          "to": "end"
+          "to": "end",
+          "tests": null
         },
         {
           "id": "failed",
           "from": "failure",
-          "to": "end"
+          "to": "end",
+          "tests": null
         }
+      ],
+      "tests": [
+        "garage.move-workflow",
+        "garage.park-success",
+        "garage.park-full"
       ]
     }
   },
@@ -305,19 +385,22 @@
       "id": "parking-sequence",
       "type": "sequence",
       "title": "Garage · parking conversation",
-      "interaction": "parking"
+      "interaction": "parking",
+      "tests": null
     },
     {
       "id": "parking-communication",
       "type": "communication",
       "title": "Garage · parking collaborators",
-      "interaction": "parking"
+      "interaction": "parking",
+      "tests": null
     },
     {
       "id": "parking-activity",
       "type": "activity",
       "title": "Garage · parking workflow",
-      "activity": "parking"
+      "activity": "parking",
+      "tests": null
     }
   ]
 }

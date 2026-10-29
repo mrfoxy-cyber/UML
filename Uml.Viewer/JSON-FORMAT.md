@@ -4,15 +4,21 @@ Open `index.html` and drop a `.json` file onto the viewer, or use **Open JSON**.
 
 The [JSON Schema](schema/uml-document.schema.json) is generated from the same contract used for runtime validation. An optional `$schema` field can point your editor to it; the viewer does not fetch that URL.
 
-See [Connected views](CONNECTED-VIEWS.md) for identified operations, `references`, activities, navigation and project manifests.
+See [Connected views](CONNECTED-VIEWS.md) for identified operations, `references`, activities, optional `tests` links, navigation and project manifests. A test catalogue is optional; owner `tests` fields accept an array of catalogue IDs or `null`.
 
 ## Document and views
 
-Required fields are `version: 1`, `id`, `title`, `elements` and non-empty `views`. Optional sections are `groups`, `relationships`, `interactions` and `activities`. IDs begin with a letter, followed by letters, digits, periods, underscores or hyphens. Unknown fields, duplicate JSON properties and unresolved references fail with an error location.
+Required fields are `version: 1`, `id`, `title`, `elements` and non-empty `views`. Optional sections are `tests`, `groups`, `relationships`, `interactions` and `activities`. IDs begin with a letter, followed by letters, digits, periods, underscores or hyphens. Unknown fields, duplicate JSON properties and unresolved references fail with an error location.
 
 Every view has a unique `id`, `title` and `type`. Class, aggregation and component views select an `elements` array. Sequence and communication views reference an `interaction` ID. Activity views reference an `activity` ID. Other diagram types are recognized but unsupported in this release. A failed import keeps the last valid document visible.
 
 ## Elements and relationships
+
+The sidebar automatically groups views by `type`. A view's `title` is its displayed diagram name, and `id` is its stable diagram identity. Both are shown in navigation and the current diagram heading. Titles may repeat; IDs must be unique within the document/project. For example:
+
+```json
+{ "id": "garage-removal-sequence", "type": "sequence", "title": "Garage — remove a vehicle", "interaction": "removal" }
+```
 
 Elements are keyed by readable IDs. Each has `kind` and `name`, with optional `members` (strings or identified members), `references`, `notes` (string) and `display`. Implemented kinds: `class`, `interface`, `enum`, `component`, `actor`.
 

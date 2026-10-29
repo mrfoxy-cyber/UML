@@ -72,6 +72,31 @@ Use a card's **↗** button or click an identified member. Message inspection an
 
 Jumps reveal the target's group, member compartment or alternative frame, centre it and highlight the shared object's matches in that view. Reveal overrides live only in viewer state, so even a normally hidden member/step can be inspected. Reset restores JSON display defaults. **Back** restores the previous view, camera, expansion/reveal state and shared selection. Loading another document clears history and rebuilds the lookup. Source JSON is never rewritten.
 
+## Connected tests
+
+Define reusable test references in the document's optional `tests` catalogue:
+
+```json
+{
+  "tests": {
+    "garage.park-success": {
+      "name": "Parking updates vehicle and space counts",
+      "kind": "unit",
+      "file": "Garage.Tests/GarageParkingTests.cs",
+      "symbol": "Garage.Tests.GarageParkingTests.Park_AddsVehicleAndUpdatesSpaceCounts"
+    }
+  }
+}
+```
+
+Each entry requires only `name`. Optional fields: `kind` (`suite`, `unit`, `integration`, `workflow`), `file`, `symbol`, `notes`, and an absolute HTTPS `url`. Paths and symbols are descriptive text; the viewer does not read or execute them. URLs open only when clicked.
+
+Attach `"tests": ["garage.park-success"]` to a class/element, identified member, relationship, call/reply message, interaction, activity, activity node, control flow or diagram view. Attach `"tests": null` when no links are supplied; omission and `[]` also work. The root catalogue itself can be omitted or null. Duplicate links and unknown test IDs fail validation. Limits: 600 catalogue entries and 100 references per owner.
+
+Use **↗** on a card, click an identified member, or inspect a connection to see **Connected tests**. The toolbar's **Tests** button shows links on the current diagram and its underlying interaction/activity, with separate headings. The count deduplicates those IDs. Class tests are not automatically presented as method tests or flow coverage. No links means **No tests linked**, not that the code is untested. These are references, not execution results or coverage claims.
+
+In a multi-file project, keep the catalogue in `model.json`; all diagram files can reference it. Garage examples include references reviewed against the existing parking, removal, service and service-workflow test files. The viewer's own test suite checks the JSON links and display behavior; linking a Garage test does not run that test.
+
 ## Multiple files
 
 Choose **Open project**, then select a folder containing exactly one `uml.project.json`:
@@ -87,7 +112,7 @@ Choose **Open project**, then select a folder containing exactly one `uml.projec
 }
 ```
 
-- `model.json` contains `elements` and optional `groups` and `relationships`.
+- `model.json` contains `elements` and optional `tests`, `groups` and `relationships`.
 - Each diagram file contains a nonempty `views` array and optional `interactions` and `activities`.
 - All diagram files reference the same model IDs. Define each interaction/activity once. Duplicate view IDs and conflicting definitions fail import.
 - Paths are relative to the manifest. Parent traversal, absolute paths and URLs are rejected. Files are read only from the user-selected folder; no network fetching occurs.
