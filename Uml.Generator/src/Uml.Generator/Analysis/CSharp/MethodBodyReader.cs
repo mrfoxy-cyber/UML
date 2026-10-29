@@ -142,6 +142,7 @@ internal sealed class MethodBodyReader(SymbolIdentity identity, CancellationToke
             _ => "direct"
         };
         return new CallSite(caller, target == null ? null : identity.Id(target), node.ToString(), receiver,
-            arguments.Select(argument => argument.ToString()).ToArray(), resolution, candidates, dispatch, SymbolIdentity.Location(node));
+            arguments.Select(argument => argument.ToString()).ToArray(), resolution, candidates, dispatch, SymbolIdentity.Location(node),
+            target == null ? null : identity.Type(target.ContainingType));
     }
 }

@@ -6,4 +6,8 @@ Run `dotnet test Uml.Generator.sln -m:1` from the generator workspace. Tests use
 
 `Authentication/` covers dedicated credentials, rejected token types, verification, cancellation and concurrent native-prompt requests through fakes. No real vault credentials are written.
 
-`Analysis/` covers declarations, partial/nested/generic types, overload and cross-compilation resolution, structured branches, deferred scopes, fingerprints, initializers, test annotations, missing dependencies, invalid code, group boundaries, cancellation, offline snapshot integrity and report export. Fixtures are created in the generator cache through the snapshot layer. No repository source is executed. Extraction remains unimplemented.
+`Analysis/` covers declarations, partial/nested/generic types, overload and cross-compilation resolution, structured branches, deferred scopes, fingerprints, initializers, test annotations, missing dependencies, invalid code, group boundaries, cancellation, offline snapshot integrity and report export. Fixtures are created in the generator cache through the snapshot layer. No repository source is executed.
+
+`Extraction/` covers class selection, partial-type exclusions, context depth, relationships and evidence, member filters, generic/external dependencies, stable IDs, viewer limits and safe paired exports. The separate `scripts/check-class-export.cjs` smoke check validates generated JSON with the actual viewer contract and checks both collapsed and expanded layouts.
+
+During active design, prefer a build plus a generated-diagram inspection for routine changes; expand tests when behaviour or contracts settle.

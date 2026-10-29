@@ -36,7 +36,8 @@ internal sealed class SymbolIdentity(string repository, IEnumerable<string> comp
         };
         var unresolved = type.TypeKind == TypeKind.Error || arguments.Any(argument => argument.Resolution == "unresolved");
         return new TypeReference(type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-            unresolved ? null : Id(type), unresolved ? "unresolved" : "resolved", arguments);
+            unresolved ? null : Id(type), unresolved ? "unresolved" : "resolved", arguments, type.TypeKind.ToString(),
+            type.OriginalDefinition.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat));
     }
 
     public static string Fingerprint(IEnumerable<SyntaxNode> declarations)

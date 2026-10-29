@@ -3,17 +3,18 @@ using Uml.Generator.Authentication;
 using Uml.Generator.Configuration;
 
 string? snapshotKey = null;
-if (args is ["analyze", "--config", _, "--snapshot", var key])
+if (args is ["analyze" or "classes", "--config", _, "--snapshot", var key])
 {
     snapshotKey = key;
     args = args[..3];
 }
-if (args is not [var command, "--config", var configPath] || command is not ("snapshot" or "login" or "analyze"))
+if (args is not [var command, "--config", var configPath] || command is not ("snapshot" or "login" or "analyze" or "classes"))
 {
     Console.WriteLine("UML Generator: snapshot --config projects/garage/.uml");
     Console.WriteLine("Connect GitHub: login --config projects/garage/.uml");
     Console.WriteLine("Analyze code: analyze --config projects/garage/.uml [--snapshot <cache-identity>]");
-    Console.WriteLine("Reads pinned GitHub snapshots and exports analysis facts. Diagram extraction is not implemented yet.");
+    Console.WriteLine("Class diagrams: classes --config projects/garage/.uml [--snapshot <cache-identity>]");
+    Console.WriteLine("Reads pinned GitHub snapshots and exports analysis facts or viewer-compatible class diagrams.");
     return args.Length == 0 || args is ["--help"] ? 0 : 2;
 }
 
@@ -30,6 +31,10 @@ try
     {
         var request = RepositoryConfigurationReader.Load(configPath, WorkspaceDirectory.Find());
         await LoginServer.RunAsync(request.Repository, cancellation.Token);
+    }
+    else if (command == "classes")
+    {
+        await new ClassDiagramCommand().RunAsync(configPath, snapshotKey, cancellation.Token);
     }
     else if (command == "analyze")
     {

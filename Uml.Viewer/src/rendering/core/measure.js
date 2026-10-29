@@ -23,10 +23,11 @@
     }
     if(p.show.has('members'))for(const value of node.messages||item.members||[])rows.push({text:typeof value==='string'?value:value.name,objectId:typeof value==='object'?value.id:null});
     if(p.show.has('notes')&&item.notes)rows.push({text:item.notes,muted:true});
-    const headerHeight=Math.max(node.kind==='actor'?92:64,28+titleLines.length*19+(p.show.has('kind')?18:0));
+    const headerHeight=Math.max(node.kind==='actor'?92:64,28+titleLines.length*19+(p.show.has('kind')?18:0))+(node.namespace?16:0);
     let bodyHeight=rows.reduce((sum,row)=>sum+Math.max(1,wrap(row.text,width-36,measure,12).length)*18+10,0);
     bodyHeight=Math.min(p.open?280:64,bodyHeight);
-    return {...node,width,height:headerHeight+(rows.length?bodyHeight+24:0),headerHeight,titleLines,rows};
+    const detailsHeight=rows.length?bodyHeight+24:0,shortcutHeight=node.shortcutLinks?.length?Math.min(126,22+node.shortcutLinks.length*27):0;
+    return {...node,width,height:headerHeight+detailsHeight+shortcutHeight,headerHeight,detailsHeight,shortcutHeight,titleLines,rows};
   }
   U.Measure={createMeasurer,wrap,node};
   if(typeof module==='object'&&module.exports)module.exports=U.Measure;

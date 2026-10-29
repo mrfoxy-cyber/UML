@@ -1,4 +1,4 @@
 namespace Uml.Generator.Analysis.Models;
 
 public sealed record TypeReference(string DisplayName, string? SymbolId, string Resolution,
-    IReadOnlyList<TypeReference> TypeArguments);
+    IReadOnlyList<TypeReference> TypeArguments, string Kind = "Unknown", string? DefinitionName = null);

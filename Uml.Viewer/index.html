@@ -13,6 +13,7 @@
   <script defer src="src/model/project.js"></script>
   <script defer src="src/rendering/registry.js"></script>
   <script defer src="src/rendering/core/measure.js"></script>
+  <script defer src="src/layout/routes.js"></script>
   <script defer src="src/layout/graph.js"></script>
   <script defer src="src/rendering/types/class.js"></script>
   <script defer src="src/rendering/types/aggregation.js"></script>
@@ -48,6 +49,7 @@
       <section id="workbench" class="workbench" aria-label="Diagram viewer">
         <div class="workbench-toolbar"><div class="view-mode" role="group" aria-label="Presentation"><button id="diagram-tab" type="button" aria-pressed="true">Diagram</button><button id="json-tab" type="button" aria-pressed="false">JSON source</button></div><span id="element-count" class="element-count"></span><div class="toolbar-actions"><button id="context-button" class="toolbar-button" type="button" aria-pressed="true" hidden>Context: shown</button><button id="tests-button" class="toolbar-button" type="button" aria-label="Show connected diagram and flow tests">Tests · 0</button><button id="reset-button" class="toolbar-button" type="button">Reset</button><button id="fullscreen-button" class="toolbar-button" type="button" aria-label="Toggle fullscreen">⛶</button><button id="download-button" class="toolbar-button" type="button" aria-label="Download the loaded JSON">↓ JSON</button></div></div>
         <div id="search-toolbar" class="search-toolbar"><button id="back-button" class="secondary-button" type="button" disabled>← Back</button><label class="search-field"><span aria-hidden="true">⌕</span><input id="element-search" type="search" placeholder="Find an element or method…" aria-label="Find an element"><kbd>↵</kbd></label><span class="search-hint">Click ↗ to find the same object in other views</span></div>
+        <div id="class-controls" class="class-controls" hidden aria-label="Class diagram presentation"><button id="interface-mode" type="button" class="toolbar-button" aria-pressed="true">Interfaces: shortcuts</button><button id="class-layout" type="button" class="toolbar-button" aria-pressed="false">Layout: connections</button><span id="connection-focus-label" class="connection-focus-label">Select a class to focus its connections</span><button id="clear-connection-focus" type="button" class="toolbar-button" hidden>Clear focus ×</button></div>
         <div id="viewport" class="viewport" tabindex="0" role="region" aria-label="Interactive diagram. Drag background to pan. Use plus or minus to zoom, and zero to fit.">
           <div id="world" class="world"><div id="groups-layer"></div><svg id="edges-layer" xmlns="http://www.w3.org/2000/svg" class="edges-layer"></svg><div id="nodes-layer"></div></div>
           <div id="layout-status" class="layout-status" role="status" aria-live="polite">Preparing your diagram…</div>

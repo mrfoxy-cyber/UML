@@ -14,6 +14,7 @@
     for(const line of scene.lifelines||[])edges.append(svg(document,'line',{x1:line.x,x2:line.x,y1:line.y,y2:line.bottom,class:'lifeline'}));
     for(const group of scene.groups){
       const box=html(document,'section','diagram-group'+(group.fragment?' fragment':''));Object.assign(box.style,{left:group.x+'px',top:group.y+'px',width:group.width+'px',height:group.height+'px'});
+      box.dataset.groupId=group.id;
       const p=group.presentation,button=html(document,'button','group-title');button.type='button';button.disabled=!p.collapsible;button.setAttribute('aria-expanded',String(p.open));
       button.setAttribute('aria-label',(p.open?'Collapse ':'Expand ')+p.name);button.dataset.actionId=group.key;
       button.title=p.name;
@@ -27,7 +28,7 @@
     }
     for(const label of scene.labels||[]){
       if(label.separator)edges.append(svg(document,'line',{x1:label.x-8,x2:label.x+label.width,y1:label.y-12,y2:label.y-12,class:'branch-separator'}));
-      const text=svg(document,'text',{x:label.x,y:label.y+13,class:'guard-label'});label.lines.forEach((line,i)=>{const span=svg(document,'tspan',{x:label.x,dy:i?17:0});span.textContent=line;text.append(span);});edges.append(text);
+      const text=svg(document,'text',{x:label.x,y:label.y+13,class:label.section?'section-label':'guard-label'});label.lines.forEach((line,i)=>{const span=svg(document,'tspan',{x:label.x,dy:i?17:0});span.textContent=line;text.append(span);});edges.append(text);
     }
     for(const edge of scene.edges){
       const group=svg(document,'g',{class:'edge-group'+(edge.context?' is-context':''),tabindex:0,role:'button','aria-label':edge.kind+': '+(edge.label||edge.id)});
@@ -57,13 +58,27 @@
       }
       const names=html(document,'span','node-names');
       if(p.show.has('kind'))names.append(html(document,'span','node-kind',node.kind==='interface'?'«interface»':node.kind==='collapsed-group'?'Group':node.kind));
+      if(node.namespace){const namespace=html(document,'span','node-namespace',node.namespace);namespace.title=node.namespace;names.append(namespace);}
       if(p.show.has('name'))names.append(html(document,'span','node-name',p.name));
       header.append(names);if(p.collapsible)header.append(html(document,'span','node-toggle',p.open?'−':'+'));
-      header.addEventListener('click',()=>actions.toggle(node.id,node.item,node.kind==='collapsed-group'?'group':'element'));card.append(header);
+      header.addEventListener('click',()=>{actions.focusNode?.(node);actions.toggle(node.id,node.item,node.kind==='collapsed-group'?'group':'element');});card.append(header);
+      card.addEventListener('click',event=>{if(!event.target.closest?.('button'))actions.focusNode?.(node);});
       if(node.kind!=='collapsed-group'&&actions.selectNode&&(!scene.activity||node.item.references?.length||node.item.tests?.length)){const link=html(document,'button','node-connect','↗');link.type='button';link.setAttribute('aria-label','Connected views for '+node.item.name);link.title='Connected views and tests';link.addEventListener('click',()=>actions.selectNode(node));card.append(link);}
       if(node.rows.length){
-        const body=html(document,'div','node-body');body.tabIndex=0;body.setAttribute('aria-label',p.name+' details');body.style.maxHeight=(node.height-node.headerHeight)+'px';
+        const body=html(document,'div','node-body');body.tabIndex=0;body.setAttribute('aria-label',p.name+' details');body.style.maxHeight=(node.detailsHeight??node.height-node.headerHeight)+'px';
         for(const row of node.rows){const line=html(document,row.objectId?'button':'div','node-row'+(row.muted?' muted':''),row.text);if(row.objectId){line.type='button';line.dataset.objectId=row.objectId;line.title='Find this member in other views';line.addEventListener('click',()=>actions.selectObject?.(row.objectId));}body.append(line);}card.append(body);
+      }
+      if(node.shortcutLinks?.length){
+        const strip=html(document,'div','interface-shortcuts');strip.style.height=node.shortcutHeight+'px';strip.setAttribute('aria-label',node.kind==='interface'?'Implementing classes':'Implemented interfaces');
+        const label=html(document,'small','shortcut-heading',node.kind==='interface'?'IMPLEMENTED BY':'IMPLEMENTS');strip.append(label);
+        for(const link of node.shortcutLinks){
+          const button=html(document,'button','interface-shortcut');button.type='button';button.dataset.targetId=link.targetId;
+          button.setAttribute('aria-label','Go to '+link.name+(link.direction==='implements'?' interface':' implementing class'));
+          button.title=(link.direction==='implements'?'Implements ':'Implemented by ')+link.name+' · jump to element';
+          button.append(html(document,'span','shortcut-symbol',link.direction==='implements'?'─○':'← C'),html(document,'span','shortcut-name',link.name));
+          button.addEventListener('click',()=>actions.jumpToElement?.(link.targetId));strip.append(button);
+        }
+        card.append(strip);
       }
       nodes.append(card);
     }

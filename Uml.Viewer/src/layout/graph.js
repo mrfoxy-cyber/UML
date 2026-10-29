@@ -12,9 +12,9 @@
       const lines=edge.label?U.Measure.wrap(edge.label,190,context.measure,12):[];
       const label=lines.length?{id:'label:'+i,text:edge.label,width:Math.min(200,Math.max(...lines.map(l=>context.measure(l,12)))+16),height:lines.length*17+8}:null;
       labels.set(edge.id,{reverse,lines});
-      return {id:edge.id,sources:[reverse?edge.target:edge.source],targets:[reverse?edge.source:edge.target],...(label?{labels:[label]}:{})};
+      return {id:edge.id,sources:[reverse?edge.target:edge.source],targets:[reverse?edge.source:edge.target],layoutOptions:{'elk.layered.priority.straightness':reverse?'20':'1'},...(label?{labels:[label]}:{})};
     });
-    const input={id:'root',layoutOptions:{'elk.algorithm':'layered','elk.direction':policy.direction,'elk.edgeRouting':'ORTHOGONAL','elk.hierarchyHandling':'INCLUDE_CHILDREN','elk.spacing.nodeNode':String(policy.nodeGap||48),'elk.layered.spacing.nodeNodeBetweenLayers':String(policy.layerGap||84),'elk.spacing.edgeEdge':'18','elk.layered.nodePlacement.strategy':'NETWORK_SIMPLEX','elk.padding':'[top=36,left=36,bottom=36,right=36]'},children:[...groupNodes,...plain],edges};
+    const input={id:'root',layoutOptions:{'elk.algorithm':'layered','elk.direction':policy.direction,'elk.edgeRouting':'ORTHOGONAL','elk.hierarchyHandling':'INCLUDE_CHILDREN','elk.spacing.nodeNode':String(policy.nodeGap||48),'elk.layered.spacing.nodeNodeBetweenLayers':String(policy.layerGap||84),'elk.spacing.edgeEdge':'18','elk.layered.nodePlacement.strategy':'NETWORK_SIMPLEX','elk.layered.nodePlacement.favorStraightEdges':'true','elk.layered.unnecessaryBendpoints':'false','elk.padding':'[top=36,left=36,bottom=36,right=36]'},children:[...groupNodes,...plain],edges};
     const output=await context.elk.layout(input),positioned=[],groups=[];
     function collect(parent,ox=0,oy=0){for(const child of parent.children||[]){const x=ox+child.x,y=oy+child.y;if(child.children){groups.push({...data.groups.find(g=>g.id===child.id),x,y,width:child.width,height:child.height});collect(child,x,y);}else positioned.push({...byId.get(child.id),x,y});}}
     collect(output);
@@ -28,6 +28,7 @@
         points=[{x:a.x+a.width/2,y:a.y+a.height},{x:b.x+b.width/2,y:b.y}];
       }
       if(labels.get(edge.id).reverse)points.reverse();
+      if(policy.simplify&&!edge.label&&U.RouteSimplifier)points=U.RouteSimplifier.simplify(points,positioned,edge.source,edge.target,groups);
       const label=out?.labels?.[0];
       return {...edge,points,label:edge.label||'',labelLines:labels.get(edge.id).lines,labelBox:label?{x:label.x+offset.x,y:label.y+offset.y,width:label.width,height:label.height}:null};
     });

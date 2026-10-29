@@ -36,7 +36,30 @@
     {
       "id": "garage-classes",
       "type": "class",
-      "title": "Garage classes"
+      "title": "Garage — domain model",
+      "class": {
+        "compilations": ["garage", "vehicle"],
+        "include": ["Garage/Models/**/*.cs"],
+        "exclude": [],
+        "members": { "visibility": ["public", "protected"], "fields": false, "properties": true, "constructors": true, "methods": true, "accessors": false },
+        "relationships": ["inheritance", "implementation", "member-type", "generic-constraint"],
+        "context": { "depth": 1, "includeExternal": false },
+        "groupBy": "namespace"
+      }
+    },
+    {
+      "id": "vehicle-hierarchy",
+      "type": "class",
+      "title": "Vehicles — types and inheritance",
+      "class": {
+        "compilations": ["vehicle"],
+        "include": ["Vehicle/Vehicles/**/*.cs"],
+        "exclude": [],
+        "members": { "visibility": ["public", "protected"], "fields": false, "properties": true, "constructors": true, "methods": true, "accessors": false },
+        "relationships": ["inheritance", "implementation", "member-type", "generic-constraint"],
+        "context": { "depth": 1, "includeExternal": false },
+        "groupBy": "namespace"
+      }
     }
   ]
 }

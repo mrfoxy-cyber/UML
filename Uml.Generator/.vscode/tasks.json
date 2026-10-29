@@ -28,6 +28,14 @@
       "problemMatcher": []
     },
     {
+      "label": "Generator: Create Garage class diagrams",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["run", "--project", "src/Uml.Generator", "--", "classes", "--config", "projects/garage/.uml"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
       "label": "Generator: Analyze Garage from GitHub",
       "type": "process",
       "command": "dotnet",

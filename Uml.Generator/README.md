@@ -1,6 +1,6 @@
 # UML Generator
 
-Repository retrieval and C# analysis are implemented. The generator reads pinned GitHub snapshots and exports declarations, references, calls, structured bodies, test annotations and diagnostics. Diagram extraction and viewer JSON output remain placeholders.
+Repository retrieval, C# analysis and class-diagram extraction are implemented. The generator reads pinned GitHub snapshots and exports analysis facts or viewer-compatible class JSON. Other diagram extractors remain placeholders.
 
 Open `Uml.Generator.sln` in Visual Studio or `Uml.Generator.code-workspace` in VS Code.
 
@@ -17,10 +17,11 @@ Uml.Generator/
 │   │   ├── Tests/              Test discovery and UML comment annotations
 │   │   └── Models/             Plain code facts; no Roslyn objects or layout
 │   ├── Extraction/
-│   │   ├── Class/              Structural diagram extraction
+│   │   ├── Class/              Implemented: class selection, members, relationships and context
+│   │   ├── Models/             Diagram facts and source evidence
 │   │   ├── Interaction/        Shared sequence/communication extraction
 │   │   └── Activity/           Activity/control-flow extraction
-│   ├── Output/                 Analysis JSON export; viewer output remains a placeholder
+│   ├── Output/                 Analysis reports, stable viewer IDs and class JSON/provenance
 │   └── Application/            Pipeline coordination
 ├── tests/Uml.Generator.Tests/   Repository, authentication and analysis tests
 ├── .cache/snapshots/            Downloaded snapshots; ignored by Git
@@ -97,6 +98,32 @@ Roslyn reads syntax and resolves symbols in memory. Only the running .NET runtim
 
 See [the analysis contracts and limitations](src/Uml.Generator/Analysis/README.md) before interpreting call or test data.
 
+## Generate class diagrams
+
+```powershell
+dotnet run --project src/Uml.Generator -- classes --config projects/garage/.uml
+```
+
+Use an existing snapshot without contacting GitHub:
+
+```powershell
+dotnet run --project src/Uml.Generator -- classes --config projects/garage/.uml --snapshot 06d3c43c4f94dfb142dde4f307ad3d18c64d9655d465748e52514ba551272ece
+```
+
+The `diagrams` section of `.uml` configures class views. The Garage example selects `Garage/Models/**/*.cs` from the garage/vehicle compilations and includes one level of related context. Selection operates on analysis records; extraction never reads local Garage folders. Each command reports the full exported file paths and diagnostics count.
+
+Open the generated `<diagram-id>.uml.json` using the viewer's **Open JSON** button. For export details, open sibling `provenance.html` in a regular browser from File Explorer. It lists the selected types, source links pinned to the commit, connection evidence and omissions. The raw `provenance.json` remains available in a text editor for source locations, snapshot identity and ID mappings. Neither provenance file is a diagram accepted by **Open JSON**. This release exports individual diagram documents, not a multi-file viewer project.
+
+Outputs are under `output/classes/<snapshot-identity>/<diagram-id>/<export-hash>/`. Identical results reuse an existing export after checking its files. Changed results create another directory, preserving previous drafts and manual edits. Diagram JSON, raw provenance and its readable HTML report are published together by a single directory rename. The configured root `output` field remains reserved for later full-project output; class drafts use this fixed generator-owned location.
+
+The [class extractor contract](src/Uml.Generator/Extraction/Class/README.md) explains configuration and supported relationships. A local integration check uses the existing viewer's actual validator and renderer:
+
+```powershell
+node scripts/check-class-export.cjs <path-to-generated.uml.json>
+```
+
+This check requires Node.js and the neighbouring viewer checkout. The generator itself has no Node.js runtime dependency.
+
 ## Snapshot format and safety
 
 The cache is `.cache/snapshots/<selection-hash>/`. Each snapshot has `manifest.json` and opaque `<git-blob-sha>.blob` files. Original repository paths live in the manifest, rather than being used as local write paths. Identical blobs are downloaded once.
@@ -134,4 +161,4 @@ dotnet test Uml.Generator.sln -m:1
 
 Repository tests use fake HTTP responses and isolated generator-cache directories. They do not require GitHub credentials or read/write a local Garage checkout. They cover pinning, PR forks, filters, limits, integrity, cancellation, cache reuse and passive storage. Live repository verification is a separate manual check.
 
-Configuration, caches and output belong to this product. Accepted diagrams stay in the viewer product. The next milestone is extracting diagram definitions from the analysis records.
+Configuration, caches and output belong to this product. Accepted diagrams stay in the viewer product. Class extraction is available; other diagram families remain future work.
