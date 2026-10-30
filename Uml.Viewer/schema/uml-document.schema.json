@@ -444,6 +444,11 @@
           "minLength": 1,
           "maxLength": 240
         },
+        "namespace": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
         "members": {
           "type": "array",
           "items": {
@@ -520,6 +525,12 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 240
+        },
+        "kind": {
+          "enum": [
+            "group",
+            "namespace"
+          ]
         },
         "members": {
           "type": "array",

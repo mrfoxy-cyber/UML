@@ -13,24 +13,29 @@
     }edges.append(defs);
     for(const line of scene.lifelines||[])edges.append(svg(document,'line',{x1:line.x,x2:line.x,y1:line.y,y2:line.bottom,class:'lifeline'}));
     for(const group of scene.groups){
-      const box=html(document,'section','diagram-group'+(group.fragment?' fragment':''));Object.assign(box.style,{left:group.x+'px',top:group.y+'px',width:group.width+'px',height:group.height+'px'});
+      const box=html(document,'section','diagram-group'+(group.fragment?' fragment':'')+(group.container?' namespace-container':''));Object.assign(box.style,{left:group.x+'px',top:group.y+'px',width:group.width+'px',height:group.height+'px'});box.setAttribute('aria-label',group.presentation.name+' container');
       box.dataset.groupId=group.id;
       const p=group.presentation,button=html(document,'button','group-title');button.type='button';button.disabled=!p.collapsible;button.setAttribute('aria-expanded',String(p.open));
       button.setAttribute('aria-label',(p.open?'Collapse ':'Expand ')+p.name);button.dataset.actionId=group.key;
       button.title=p.name;
       if(group.fragment)button.append(html(document,'span','group-tab','alt'));
       if(p.show.has('name'))button.append(html(document,'span','group-name',p.name));
-      if(p.show.has('count'))button.append(html(document,'span','group-count',group.count+(group.fragment?' paths':' elements')));
+      if(p.show.has('count'))button.append(html(document,'span','group-count',group.count+(group.fragment?' paths':group.count===1?' element':' elements')));
       if(p.collapsible)button.append(html(document,'span','group-toggle',p.open?'−':'+'));
       button.addEventListener('click',()=>actions.toggle(group.key,group.item,group.fragment?'fragment':'group'));box.append(button);
       if(group.noteHeight){const note=html(document,'div','group-note',group.item.notes);note.style.maxHeight=group.noteHeight+'px';note.tabIndex=0;box.append(note);}
       groups.append(box);
+      if(actions.editable&&actions.dragHandle){
+        const handle=actions.dragHandle(group.sourceId,'group',p.name);handle.classList.add('group-drag-handle');box.append(handle);
+        const pin=html(document,'button','group-pin-button',scene.nodes.filter(n=>n.groupId===group.id).every(n=>n.pinned)?'●':'○');pin.type='button';pin.setAttribute('aria-label','Toggle pins for '+p.name);pin.title='Pin or unpin the group cards';pin.addEventListener('click',()=>actions.pinGroup?.(group.sourceId));box.append(pin);
+      }
     }
     for(const label of scene.labels||[]){
       if(label.separator)edges.append(svg(document,'line',{x1:label.x-8,x2:label.x+label.width,y1:label.y-12,y2:label.y-12,class:'branch-separator'}));
       const text=svg(document,'text',{x:label.x,y:label.y+13,class:label.section?'section-label':'guard-label'});label.lines.forEach((line,i)=>{const span=svg(document,'tspan',{x:label.x,dy:i?17:0});span.textContent=line;text.append(span);});edges.append(text);
     }
-    for(const edge of scene.edges){
+    if(scene.routeNetwork)U.ConnectionPainter.draw(document,edges,scene,actions);
+    for(const edge of scene.routeNetwork?[]:scene.edges){
       const group=svg(document,'g',{class:'edge-group'+(edge.context?' is-context':''),tabindex:0,role:'button','aria-label':edge.kind+': '+(edge.label||edge.id)});
       group.dataset.edgeId=edge.id;
       const d=edge.points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ');
@@ -62,6 +67,10 @@
       if(p.show.has('name'))names.append(html(document,'span','node-name',p.name));
       header.append(names);if(p.collapsible)header.append(html(document,'span','node-toggle',p.open?'−':'+'));
       header.addEventListener('click',()=>{actions.focusNode?.(node);actions.toggle(node.id,node.item,node.kind==='collapsed-group'?'group':'element');});card.append(header);
+      if(actions.editable&&actions.dragHandle){
+        card.append(actions.dragHandle(node.kind==='collapsed-group'?node.sourceId:node.id,node.kind==='collapsed-group'?'collapsed-group':'node',p.name));
+        const pin=html(document,'button','node-pin-button'+(node.pinned?' is-pinned':''),node.pinned?'●':'○');pin.type='button';pin.setAttribute('aria-label',(node.pinned?'Unpin ':'Pin ')+p.name);pin.title=node.pinned?'Pinned · auto-arrange keeps this position':'Pin this position';pin.addEventListener('click',()=>actions.pinNode?.(node.id));card.append(pin);
+      }
       card.addEventListener('click',event=>{if(!event.target.closest?.('button'))actions.focusNode?.(node);});
       if(node.kind!=='collapsed-group'&&actions.selectNode&&(!scene.activity||node.item.references?.length||node.item.tests?.length)){const link=html(document,'button','node-connect','↗');link.type='button';link.setAttribute('aria-label','Connected views for '+node.item.name);link.title='Connected views and tests';link.addEventListener('click',()=>actions.selectNode(node));card.append(link);}
       if(node.rows.length){
@@ -83,6 +92,14 @@
       nodes.append(card);
     }
   }
-  U.Painter={draw,html,svg};
+  function updatePositions(layers,scene,actions){
+    const byNode=new Map(scene.nodes.map(n=>[n.id,n])),byGroup=new Map(scene.groups.map(g=>[g.id,g])),byEdge=new Map(scene.edges.map(e=>[e.id,e]));
+    for(const card of layers.nodes.querySelectorAll('[data-node-id]')){const n=byNode.get(card.dataset.nodeId);if(n)Object.assign(card.style,{left:n.x+'px',top:n.y+'px'});}
+    for(const box of layers.groups.querySelectorAll('[data-group-id]')){const g=byGroup.get(box.dataset.groupId);if(g)Object.assign(box.style,{left:g.x+'px',top:g.y+'px',width:g.width+'px',height:g.height+'px'});}
+    layers.edges.setAttribute('viewBox',`0 0 ${scene.width} ${scene.height}`);layers.edges.setAttribute('width',scene.width);layers.edges.setAttribute('height',scene.height);
+    if(scene.routeNetwork&&actions)U.ConnectionPainter.draw(layers.edges.ownerDocument,layers.edges,scene,actions);
+    for(const group of layers.edges.querySelectorAll('[data-edge-id]')){const e=byEdge.get(group.dataset.edgeId);if(!e)continue;const d=e.points.map((p,i)=>(i?'L':'M')+p.x+' '+p.y).join(' ');for(const path of group.querySelectorAll('path'))path.setAttribute('d',d);if(e.labelBox){const b=e.labelBox,rect=group.querySelector('.edge-label-background'),text=group.querySelector('.edge-label');if(rect){rect.setAttribute('x',b.x-2);rect.setAttribute('y',b.y-1);}if(text){text.setAttribute('x',b.x+8);text.setAttribute('y',b.y+17);for(const span of text.querySelectorAll('tspan'))span.setAttribute('x',b.x+8);}}}
+  }
+  U.Painter={draw,updatePositions,html,svg};
   if(typeof module==='object'&&module.exports)module.exports=U.Painter;
 })(globalThis);

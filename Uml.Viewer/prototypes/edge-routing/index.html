@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connection layout — UML Studio prototype</title>
+  <link rel="stylesheet" href="prototype.css">
+  <script defer src="prototype.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="../../index.html"><span class="brand-mark">U</span> UML Studio</a>
+    <p class="eyebrow">DESIGN EXPLORATION / 01</p>
+    <h1>Vehicle<br>connections</h1>
+    <p class="intro">Shared paths where they help. Separate lanes where meaning differs.</p>
+    <div class="diagram-entry"><span class="entry-icon">◇</span><div><strong>Vehicles & specifications</strong><small>Illustrative class diagram</small></div></div>
+    <section class="selection-panel" aria-labelledby="selection-heading">
+      <p class="eyebrow">CONNECTION INSPECTOR</p>
+      <h2 id="selection-heading">Explore a connection</h2>
+      <p id="selection-description">Select a class or a line. Shared paths keep every relationship available.</p>
+      <ul id="relationship-list"></ul>
+    </section>
+    <div class="sidebar-bottom"><span class="prototype-dot"></span> Visual prototype <a href="../../EDGE-ROUTING-PLAN.md">Read the plan ↗</a></div>
+  </aside>
+  <main>
+    <header class="page-heading"><div><p class="eyebrow">CLASS DIAGRAM / CONNECTION STUDY</p><h2>Less clutter. Traceable relationships.</h2><p>One hierarchy, aligned pairs, and deliberate places for lines to meet.</p></div><span class="status-badge">Dummy layout</span></header>
+    <section class="workspace" aria-label="Connection layout prototype">
+      <div class="toolbar">
+        <div class="mode-control"><span>Connections</span><div class="segmented" role="group" aria-label="Connection presentation"><button id="bundled" type="button" aria-pressed="true">Bundled</button><button id="separate" type="button" aria-pressed="false">Separate</button></div></div>
+        <span id="mode-description">Shared trunks · individual meanings</span>
+        <button class="clear-button" id="clear-selection" type="button">Clear selection</button>
+      </div>
+      <div class="stage">
+        <svg id="diagram" viewBox="0 0 1060 620" aria-labelledby="diagram-title diagram-description">
+          <title id="diagram-title">Vehicle connection layout prototype</title>
+          <desc id="diagram-description">Three road vehicles share an inheritance bus. Each aligns with its specification. Two Car-to-specification roles share a path. Truck and Car depend on VehicleColor through a shared route that crosses unrelated associations without joining them. Select classes and connections to inspect their meanings.</desc>
+          <defs>
+            <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".8" fill="#dce5e6"/></pattern>
+            <marker id="inheritance-arrow" markerWidth="15" markerHeight="15" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1 L12 7 L1 13 Z" fill="#fff" stroke="#2d796d" stroke-width="1.8"/></marker>
+            <marker id="dependency-arrow" markerWidth="13" markerHeight="13" refX="11" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M1 1 L11 6 L1 11" fill="none" stroke="#617fa1" stroke-width="1.7"/></marker>
+          </defs>
+          <rect width="1060" height="620" fill="url(#grid)"/>
+          <g id="guides" aria-hidden="true">
+            <rect x="64" y="8" width="932" height="288" rx="12" class="namespace-frame"/>
+            <text x="86" y="34" class="namespace-title">Garage.Vehicles</text><text x="974" y="34" text-anchor="end" class="namespace-count">4 classes</text>
+            <rect x="64" y="350" width="932" height="124" rx="12" class="namespace-frame"/>
+            <text x="230" y="374" class="namespace-title">Garage.Vehicles.Specifications</text><text x="974" y="374" text-anchor="end" class="namespace-count">3 classes</text>
+            <rect x="752" y="478" width="250" height="138" rx="12" class="namespace-frame"/>
+            <text x="770" y="504" class="namespace-title">Garage.Vehicles.Types</text>
+          </g>
+          <g id="connections"></g>
+          <g id="route-notes"></g>
+          <g id="cards"></g>
+        </svg>
+      </div>
+      <footer class="diagram-footer"><div class="legend"><span><i class="legend-line inheritance"></i> Inherits</span><span><i class="legend-line association"></i> Association</span><span><i class="legend-line dependency"></i> Dependency</span></div><span id="diagram-count">8 elements · 9 relationships</span></footer>
+    </section>
+    <div class="explanation"><div><span class="number">01</span><p><strong>A shared inheritance bus</strong>Three branches, one parent-facing trunk.</p></div><div><span class="number">02</span><p><strong>Parallel means separate</strong>Switch modes to reveal individual lanes.</p></div><div><span class="number">03</span><p><strong>A crossing is not a join</strong>Small gaps keep unrelated paths distinct.</p></div></div>
+    <p class="prototype-note">Illustrative relationships and fixed positions. Try “Namespaces &amp; shared paths” in the main viewer to explore the implemented layout.</p>
+  </main>
+</body>
+</html>

@@ -4,6 +4,8 @@ Status: the shared core and six dedicated renderers are implemented, including a
 
 ## Decision
 
+Selectable layout engines, beginning with series-parallel and an explicit hierarchical fallback, are proposed in [LAYOUT-PLAN.md](LAYOUT-PLAN.md). That plan separates node placement, routing, grouping and focus without changing semantic JSON.
+
 Use a shared rendering foundation and a dedicated renderer for every supported diagram type. The JSON model describes meaning. The selected type renderer decides how that meaning should be arranged and presented.
 
 The architecture supports consistent colors, typography and controls while allowing a sequence diagram, an aggregation diagram and a deployment diagram to look and behave appropriately for their type.

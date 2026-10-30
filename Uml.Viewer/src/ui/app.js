@@ -2,10 +2,13 @@
   'use strict';const U=root.UmlViewer,document=root.document,$=id=>document.getElementById(id);
   const viewport=$('viewport'),world=$('world'),status=$('layout-status'),html=(tag,className,text)=>U.Painter.html(document,tag,className,text);
   const glyphs={class:'C',aggregation:'◇',component:'▣',sequence:'⇣',communication:'↔',activity:'⑂'};
+  // Fullscreen displays only descendants of the workbench; keep its overlays there.
+  $('workbench').append($('inspector'),$('error-panel'));
   const elk=typeof root.ELK==='function'?new root.ELK():null;
   const measure=U.Measure.createMeasurer(document),camera={x:0,y:0,zoom:1};
   let session=null,scene=null,view=null,mode='diagram',importTicket=0,drawTicket=0,fitted=true;
-  let selection=null,history=[];
+  let selection=null,history=[],editing=null;
+  const editable=()=>!!session&&mode==='diagram'&&['class','aggregation','component'].includes(view?.type);
   const bounds=()=>({width:viewport.clientWidth||1000,height:viewport.clientHeight||580});
   function currentState(){return session.states.get(view.id);}
   function saveCamera(){if(session&&view&&scene)currentState().camera={...camera,fitted};}
@@ -13,7 +16,7 @@
   function transform(){world.style.transform=`translate(${camera.x}px,${camera.y}px) scale(${camera.zoom})`;$('zoom-value').textContent=Math.round(camera.zoom*100)+'%';saveCamera();}
   function fit(automatic=false){if(!scene)return;const {width,height}=bounds();camera.zoom=Math.max(.06,Math.min(1.1,(width-60)/scene.width,(height-60)/scene.height));camera.x=(width-scene.width*camera.zoom)/2;camera.y=(height-scene.height*camera.zoom)/2;fitted=true;transform();}
   function zoom(zoomValue,x=bounds().width/2,y=bounds().height/2){const value=Math.min(3,Math.max(.06,zoomValue)),ratio=value/camera.zoom;camera.x=x-(x-camera.x)*ratio;camera.y=y-(y-camera.y)*ratio;camera.zoom=value;fitted=false;transform();}
-  function stateFor(candidate,id){if(!candidate.states.has(id)){const selected=candidate.data.views.find(item=>item.id===id);candidate.states.set(id,{open:new Map(),reveal:new Set(),camera:null,focusId:null,interfacesAsLines:false,groupLayout:(selected?.elements?.length||0)<=12});}return candidate.states.get(id);}
+  function stateFor(candidate,id){if(!candidate.states.has(id)){const selected=candidate.data.views.find(item=>item.id===id);candidate.states.set(id,U.Arrangement.ensure({open:new Map(),reveal:new Set(),camera:null,focusId:null,edgeFocusIds:[],interfacesAsLines:false,layoutAlgorithm:selected?.type==='class'?'inheritance':'elk',layoutDirection:'DOWN',groupLayout:true,routingMode:'bundled'}));}return candidate.states.get(id);}
   function context(candidate,selected){return {elk,measure,viewport:bounds(),state:stateFor(candidate,selected.id)};}
   function error(errorValue,filename='JSON document'){
     $('error-title').textContent='Could not open '+filename;$('error-message').textContent=errorValue.message||String(errorValue);$('error-path').textContent=errorValue.path||'';$('error-panel').hidden=false;
@@ -22,6 +25,7 @@
     const source=mode==='source';viewport.hidden=source;$('source-panel').hidden=!source;$('search-toolbar').hidden=source;$('zoom-controls').hidden=source;
     $('diagram-tab').setAttribute('aria-pressed',String(!source));$('json-tab').setAttribute('aria-pressed',String(source));$('canvas-hint').textContent=source?'Read only · edit your file and open it again':'↔ Drag to pan · Scroll to zoom';
     classControls();
+    editing?.update();
   }
   function header(){
     $('document-name').textContent=session.data.title;$('file-name').textContent=session.filename;$('view-count').textContent=session.data.views.length;
@@ -57,15 +61,18 @@
   }
   function draw(result){
     scene=result;world.style.width=scene.width+'px';world.style.height=scene.height+'px';
-    U.Painter.draw(document,{groups:$('groups-layer'),nodes:$('nodes-layer'),edges:$('edges-layer')},scene,{toggle,inspect,selectObject,selectNode,focusNode,jumpToElement});
+    U.Painter.draw(document,{groups:$('groups-layer'),nodes:$('nodes-layer'),edges:$('edges-layer')},scene,{toggle,inspect,selectObject,selectNode,focusNode,jumpToElement,editable:editable(),dragHandle:editing?.dragHandle,pinNode:editing?.pinNode,pinGroup:editing?.pinGroup});
     highlight();
     $('context-button').hidden=!scene.nodes.some(n=>n.context)&&!scene.edges.some(e=>e.context);contextUI();
-    $('view-caption').textContent=scene.caption;$('notice').hidden=!scene.notice;$('notice').textContent=scene.notice||'';$('canvas-empty').hidden=scene.nodes.length>0;
+    const routeNotice=scene.arrangementNotice||(scene.edges.some(edge=>edge.routingWarning)?'Some connections need more space for a separate route. Marked connections remain available in the inspector; move nearby cards or auto-arrange.':scene.notice);
+    $('view-caption').textContent=scene.caption;$('notice').hidden=!routeNotice;$('notice').textContent=routeNotice||'';$('canvas-empty').hidden=scene.nodes.length>0;
     $('element-count').textContent=scene.interaction?`${scene.nodes.length} participants · ${scene.interaction.messages.length} messages`:scene.interfaceLinks?.length?`${scene.nodes.length} elements · ${scene.edges.length} lines · ${scene.interfaceLinks.length} interface shortcuts`:`${scene.nodes.length} elements · ${scene.edges.length} connections`;
+    if(scene.routeNetwork){const cables=scene.routeNetwork.cables||[];$('element-count').textContent=`${scene.nodes.length} elements · ${scene.edges.reduce((sum,e)=>sum+(e.originals?.length||1),0)} relationships · `+(cables.length?`${cables.length} namespace cables`:`${scene.routeNetwork.badges.length} shared paths`)+(scene.interfaceLinks?.length?` · ${scene.interfaceLinks.length} shortcuts`:'');}
     const legend=$('mini-legend');legend.replaceChildren();
     const symbols={dependency:'╌▷',association:'─',inheritance:'─▷',implementation:'╌▷',aggregation:'◇─',composition:'◆─',call:'→',reply:'⇢',alt:'alt'};
     for(const [kind,label] of scene.legend||[]){const entry=html('span');entry.append(html('b','',symbols[kind]||'→'),document.createTextNode(label));legend.append(entry);}
     status.textContent='';
+    editing?.update();
   }
   async function loadText(raw,filename='document.json',example=false,ticket,project=null){
     const token=ticket??++importTicket;
@@ -74,13 +81,14 @@
       if(!elk)throw new Error('The local layout library is missing. Keep the vendor folder alongside index.html.');
       status.textContent='Arranging your diagram…';
       const result=await U.Renderers.get(selected.type).build(data,selected,context(candidate,selected));
+      if(['class','aggregation','component'].includes(selected.type))U.Arrangement.apply(result,stateFor(candidate,selected.id));
       if(token!==importTicket)return false;
-      saveCamera();++drawTicket;session=candidate;view=selected;scene=null;mode='diagram';selection=null;history=[];$('back-button').disabled=true;$('inspector').hidden=true;$('error-panel').hidden=true;$('element-search').value='';header();draw(result);fit(true);return true;
+      editing?.cancel();saveCamera();++drawTicket;session=candidate;view=selected;scene=null;mode='diagram';selection=null;history=[];$('back-button').disabled=true;$('inspector').hidden=true;$('error-panel').hidden=true;$('element-search').value='';header();draw(result);fit(true);return true;
     }catch(e){if(token===importTicket){status.textContent='';error(e,filename);}return false;}
   }
   async function loadFile(file){
     const token=++importTicket;
-    try{if(!file)throw new Error('Choose one JSON file.');if(file.size>4*1024*1024)throw new Error('Maximum file size is 4 MB.');if(!/\.json$/i.test(file.name))throw new Error('Choose a file ending in .json.');const raw=await file.text();if(token!==importTicket)return false;return loadText(raw,file.name,false,token);}catch(e){if(token===importTicket)error(e,file?.name||'file');return false;}
+    try{if(!file)throw new Error('Choose one JSON file.');if(file.size>4*1024*1024)throw new Error('Maximum file size is 4 MB.');if(!/\.json$/i.test(file.name))throw new Error('Choose a file ending in .json.');const raw=await file.text();if(token!==importTicket)return false;if(U.Contract.read(raw)?.kind==='uml-arrangement')return editing.loadRaw(raw);return loadText(raw,file.name,false,token);}catch(e){if(token===importTicket)error(e,file?.name||'file');return false;}
   }
   async function loadProject(input){
     const token=++importTicket;
@@ -101,6 +109,7 @@
     try{
       const result=await U.Renderers.get(selected.type).build(candidate.data,selected,context(candidate,selected));
       if(ticket!==drawTicket||session!==candidate||view!==selected)return false;
+      if(['class','aggregation','component'].includes(selected.type))U.Arrangement.apply(result,stateFor(candidate,selected.id));
       draw(result);
       if(resetCamera)fit(true);
       else if(screen){const next=[...scene.nodes,...scene.groups].find(n=>n.id===anchor||n.key===anchor);if(next){camera.x=screen.x-next.x*camera.zoom;camera.y=screen.y-next.y*camera.zoom;}fitted=false;transform();}
@@ -115,7 +124,7 @@
   }
   async function toggle(key,item,category='element'){
     if(!session||!view)return;const state=currentState(),p=U.Model.presentation(item,key,state,category);if(!p.collapsible)return;
-    state.open.set(key,!p.open);return render({anchor:key});
+    if(editable())U.Arrangement.checkpoint(state,U.Arrangement.snapshot(state));state.open.set(key,!p.open);return render({anchor:key});
   }
   function setMode(value){mode=value;modeUI();}
   function highlight(){
@@ -189,33 +198,38 @@
     if(!node.item.references?.length)panel.append(html('p','', 'No shared object references on this step. Add references in JSON to connect it.'));
   }
   function classControls(){
-    const active=!!session&&view?.type==='class'&&mode==='diagram';$('class-controls').hidden=!active;if(!active)return;
+    const active=editable();$('class-controls').hidden=!active;if(!active)return;
     const state=currentState();$('interface-mode').textContent=state.interfacesAsLines?'Interfaces: lines':'Interfaces: shortcuts';$('interface-mode').setAttribute('aria-pressed',String(!state.interfacesAsLines));
-    $('class-layout').textContent=state.groupLayout?'Layout: groups':'Layout: connections';$('class-layout').setAttribute('aria-pressed',String(state.groupLayout));
-    $('clear-connection-focus').hidden=!state.focusId;
+    $('layout-engine').value=state.layoutAlgorithm;$('layout-direction').value=state.layoutDirection;
+    $('interface-mode').hidden=view.type!=='class';$('class-layout').disabled=false;$('class-layout').title='Keep classes inside labelled containers, or use compact namespace labels';
+    $('class-layout').textContent=state.groupLayout?'Namespaces: containers':'Namespaces: labels';$('class-layout').setAttribute('aria-pressed',String(state.groupLayout));
+    $('routing-mode').textContent=state.routingMode==='separate'?'Connections: separate':'Connections: bundled';$('routing-mode').setAttribute('aria-pressed',String(state.routingMode!=='separate'));
+    $('clear-connection-focus').hidden=!state.focusId&&!state.edgeFocusIds?.length;
     const node=scene?.nodes.find(node=>node.id===state.focusId);
-    $('connection-focus-label').textContent=state.focusId?'Connections of '+(node?.item.name||'selected class'):'Select a class to focus its connections';
+    $('connection-focus-label').textContent=state.edgeFocusIds?.length?state.edgeFocusIds.length+' selected connections':state.focusId?'Connections of '+(node?.item.name||'selected class'):scene?.layoutInfo?.fallback||scene?.layoutInfo?.basis||'Select a class to focus its connections';
   }
-  function setConnectionFocus(id){if(!session||view.type!=='class')return;currentState().focusId=id;applyConnectionFocus();}
-  function focusNode(node){if(view.type!=='class')return;selection=null;$('inspector').hidden=true;setConnectionFocus(node.id);highlight();}
-  function clearConnectionFocus(){if(!session||view.type!=='class')return;currentState().focusId=null;applyConnectionFocus();}
+  function setConnectionFocus(id){if(!editable())return;currentState().focusId=id;currentState().edgeFocusIds=[];applyConnectionFocus();}
+  function focusNode(node){if(!editable())return;selection=null;$('inspector').hidden=true;setConnectionFocus(node.id);highlight();}
+  function clearConnectionFocus(){if(!editable())return;currentState().focusId=null;currentState().edgeFocusIds=[];applyConnectionFocus();}
   function applyConnectionFocus(){
-    const requested=view?.type==='class'?currentState().focusId:null;
+    const requested=editable()?currentState().focusId:null,selectedEdges=new Set(editable()?currentState().edgeFocusIds||[]:[]);
     const rootNode=requested&&scene?.nodes.find(node=>node.id===requested||node.kind==='collapsed-group'&&node.item.members.includes(requested));
     const rootId=rootNode?.id,related=new Set(rootId?[rootId]:[]),edgeIds=new Set();
     if(rootId)for(const edge of scene.connections||scene.edges)if(edge.source===rootId||edge.target===rootId){related.add(edge.source);related.add(edge.target);edgeIds.add(edge.id);}
-    world.classList.toggle('has-connection-focus',!!rootId);
+    for(const edge of scene.edges)if(selectedEdges.has(edge.id)){edgeIds.add(edge.id);related.add(edge.source);related.add(edge.target);}
+    const focused=!!rootId||!!selectedEdges.size;world.classList.toggle('has-connection-focus',focused);
     for(const card of $('nodes-layer').querySelectorAll('[data-node-id]')){
       card.classList.toggle('is-connection-root',card.dataset.nodeId===rootId);
-      card.classList.toggle('is-connected',!!rootId&&related.has(card.dataset.nodeId));
-      card.classList.toggle('is-unrelated',!!rootId&&!related.has(card.dataset.nodeId));
+      card.classList.toggle('is-connected',focused&&related.has(card.dataset.nodeId));
+      card.classList.toggle('is-unrelated',focused&&!related.has(card.dataset.nodeId));
     }
     for(const edge of $('edges-layer').querySelectorAll('[data-edge-id]')){
       edge.classList.toggle('is-connected',!!rootId&&edgeIds.has(edge.dataset.edgeId));
       edge.classList.toggle('is-unrelated',!!rootId&&!edgeIds.has(edge.dataset.edgeId));
     }
+    for(const edge of $('edges-layer').querySelectorAll('[data-edge-ids]')){const connected=JSON.parse(edge.dataset.edgeIds).some(id=>edgeIds.has(id));edge.classList.toggle('is-connected',focused&&connected);edge.classList.toggle('is-unrelated',focused&&!connected);}
     for(const group of $('groups-layer').querySelectorAll('[data-group-id]')){
-      group.classList.toggle('is-unrelated',!!rootId&&!scene.nodes.some(node=>node.groupId===group.dataset.groupId&&related.has(node.id)));
+      group.classList.toggle('is-unrelated',focused&&!scene.nodes.some(node=>node.groupId===group.dataset.groupId&&related.has(node.id)));
     }
     classControls();
   }
@@ -223,12 +237,12 @@
     const occurrence=session?.index.occurrences.find(item=>item.viewId===view.id&&item.kind==='element'&&item.elementId===id);
     if(occurrence)return navigateTo(occurrence.key,id);
   }
-  function remember(){saveCamera();history.push({viewId:view.id,camera:{...camera},fitted,mode,selection:selection&&{...selection},focusId:currentState().focusId,open:new Map(currentState().open),reveal:new Set(currentState().reveal)});if(history.length>50)history.shift();$('back-button').disabled=false;}
+  function remember(){saveCamera();history.push({viewId:view.id,camera:{...camera},fitted,mode,selection:selection&&{...selection},focusId:currentState().focusId,edgeFocusIds:[...currentState().edgeFocusIds||[]],open:new Map(currentState().open),reveal:new Set(currentState().reveal)});if(history.length>50)history.shift();$('back-button').disabled=false;}
   async function navigateTo(key,objectId=selection?.objectId){
     const candidate=session,occurrence=session?.index.occurrences.find(o=>o.key===key);if(!occurrence)return false;
     const selected=session.data.views.find(v=>v.id===occurrence.viewId);remember();
     const state=stateFor(session,selected.id);
-    const reveal=id=>{for(const group of session.data.groups||[])if(group.members.includes(id)){state.open.set('group:'+group.id,true);state.reveal.add('group:'+group.id);}state.open.set(id,true);state.reveal.add(id);};
+    const reveal=id=>{for(const group of U.Containers.document(session.data,view).groups)if(group.members.includes(id)){state.open.set('group:'+group.id,true);state.reveal.add('group:'+group.id);}state.open.set(id,true);state.reveal.add(id);};
     if(occurrence.elementId)reveal(occurrence.elementId);
     if(occurrence.kind==='message'){reveal(occurrence.from);reveal(occurrence.to);for(const parent of occurrence.parents){state.open.set(parent,true);state.reveal.add(parent);}}
     if(occurrence.kind==='activity')state.open.set(occurrence.localId,true);
@@ -241,18 +255,20 @@
   async function back(){
     const previous=history.pop(),candidate=session;if(!previous)return false;
     if(!await selectView(previous.viewId)||candidate!==session)return false;
-    currentState().open=new Map(previous.open);currentState().reveal=new Set(previous.reveal);currentState().focusId=previous.focusId;if(!await render()||candidate!==session)return false;
+    currentState().open=new Map(previous.open);currentState().reveal=new Set(previous.reveal);currentState().focusId=previous.focusId;currentState().edgeFocusIds=previous.edgeFocusIds||[];if(!await render()||candidate!==session)return false;
     restoreCamera(previous.camera);fitted=previous.fitted;mode=previous.mode;modeUI();transform();selection=previous.selection;
     if(selection)selectObject(selection.objectId);else $('inspector').hidden=true;$('back-button').disabled=!history.length;return true;
   }
   function inspect(edge){
-    if(view.type==='class')setConnectionFocus(edge.source);
+    if(editable()){selection=null;currentState().focusId=null;currentState().edgeFocusIds=edge.memberIds||[edge.id];applyConnectionFocus();}
     const panel=$('inspector-content');panel.replaceChildren();$('inspector').hidden=false;
-    const title=html('h3','',edge.messages?.length?'Messages on this connection':edge.kind[0].toUpperCase()+edge.kind.slice(1));panel.append(title);
+    const title=html('h3','',edge.memberIds?.length>1?'Shared path · '+edge.memberIds.length+' connections':edge.messages?.length?'Messages on this connection':edge.kind[0].toUpperCase()+edge.kind.slice(1));panel.append(title);
     const name=id=>session.data.elements[id]?.name||id;
     for(const value of edge.messages||edge.originals||[edge]){
       const item=html('article');item.append(html('small','',(value.number?value.number+' · ':'')+(value.kind||edge.kind)),html('p','',name(value.from)+' → '+name(value.to)));
       if(value.label)item.append(html('code','',value.label));
+      if(value.fromMultiplicity||value.toMultiplicity)item.append(html('p','', 'Multiplicity: '+(value.fromMultiplicity||'unspecified')+' → '+(value.toMultiplicity||'unspecified')));
+      if(editable()){const trace=html('button','reference-link','Trace this relationship');trace.type='button';trace.dataset.traceRelationship=value.id;trace.addEventListener('click',()=>{currentState().edgeFocusIds=scene.edges.filter(e=>(e.originals||[e]).some(r=>r.id===value.id)).map(e=>e.id);currentState().focusId=null;applyConnectionFocus();});item.append(trace);}
       if(value.guards?.length)item.append(html('p','',value.guards.map(g=>'['+g+']').join(' AND ')));
       item.append(html('small','',value.id));renderTests(item,value);referenceButtons(item,value.references);
       if(value.phase)item.append(html('small','', 'Test phase: '+value.phase));detailButton(item,value);
@@ -275,7 +291,7 @@
     if(member){const occurrence=session.index.byObject.get(member.id)?.find(o=>o.viewId===view.id);if(occurrence)return navigateTo(occurrence.key,member.id);}
     const id=ids.find(id=>{const item=session.data.elements[id];return [id,item.name,item.display?.collapsed?.name,item.display?.expanded?.name].some(value=>value?.toLocaleLowerCase().includes(needle));});
     if(!id){$('notice').hidden=false;$('notice').textContent='No element matches “'+query+'” in this view.';return;}
-    const state=currentState();if(view.type==='class'){state.focusId=id;selection=null;$('inspector').hidden=true;}for(const group of session.data.groups||[])if(group.members.includes(id))state.open.set('group:'+group.id,true);state.open.set(id,true);
+    const state=currentState();if(editable()){state.focusId=id;state.edgeFocusIds=[];selection=null;$('inspector').hidden=true;}for(const group of U.Containers.document(session.data,view).groups)if(group.members.includes(id))state.open.set('group:'+group.id,true);state.open.set(id,true);
     await render();if(candidate!==session||selected!==view)return;const node=scene.nodes.find(n=>n.id===id);if(node){centerNode(node);$('nodes-layer').querySelector(`[data-node-id="${id}"] .node-header`)?.focus();}
   }
   async function selectExample(id){const example=(U.Examples||[]).find(e=>e.id===id);if(example)return loadText(example.text,example.filename,true);}
@@ -293,12 +309,15 @@
   $('diagram-tab').addEventListener('click',()=>setMode('diagram'));$('json-tab').addEventListener('click',()=>setMode('source'));
   $('tests-button').addEventListener('click',inspectDiagramTests);
   $('context-button').addEventListener('click',()=>{if(session){session.contextVisible=!session.contextVisible;contextUI();}});
-  $('interface-mode').addEventListener('click',()=>{if(session&&view.type==='class'){currentState().interfacesAsLines=!currentState().interfacesAsLines;render({resetCamera:true});}});
-  $('class-layout').addEventListener('click',()=>{if(session&&view.type==='class'){currentState().groupLayout=!currentState().groupLayout;render({resetCamera:true});}});
+  $('interface-mode').addEventListener('click',()=>{if(session&&view.type==='class')editing.change(state=>{state.interfacesAsLines=!state.interfacesAsLines;},{auto:true});});
+  $('class-layout').addEventListener('click',()=>{if(editable())editing.change(state=>{state.groupLayout=!state.groupLayout;},{auto:true});});
+  $('layout-engine').addEventListener('change',()=>{if(editable())editing.change(state=>{state.layoutAlgorithm=$('layout-engine').value;},{auto:true});});
+  $('layout-direction').addEventListener('change',()=>{if(editable())editing.change(state=>{state.layoutDirection=$('layout-direction').value;},{auto:true});});
+  $('routing-mode').addEventListener('click',()=>{if(editable())editing.change(state=>{state.routingMode=state.routingMode==='separate'?'bundled':'separate';},{fit:false});});
   $('clear-connection-focus').addEventListener('click',clearConnectionFocus);
   $('back-button').addEventListener('click',()=>back());
   $('zoom-in').addEventListener('click',()=>zoom(camera.zoom*1.2));$('zoom-out').addEventListener('click',()=>zoom(camera.zoom/1.2));$('fit-button').addEventListener('click',()=>fit());$('actual-button').addEventListener('click',()=>zoom(1));
-  $('reset-button').addEventListener('click',()=>{if(!session)return;currentState().open.clear();currentState().reveal.clear();currentState().focusId=null;selection=null;$('element-search').value='';render({resetCamera:true});});
+  $('reset-button').addEventListener('click',()=>{if(!session)return;currentState().open.clear();currentState().reveal.clear();currentState().focusId=null;currentState().edgeFocusIds=[];selection=null;$('element-search').value='';render({resetCamera:true});});
   $('element-search').addEventListener('keydown',event=>{if(event.key==='Enter')focus();});
   $('dismiss-error').addEventListener('click',()=>$('error-panel').hidden=true);$('close-inspector').addEventListener('click',()=>$('inspector').hidden=true);
   $('fullscreen-button').addEventListener('click',async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('workbench').requestFullscreen();}catch{};if(fitted)fit(true);});
@@ -308,10 +327,11 @@
   $('theme-button').addEventListener('click',()=>{dark=!dark;document.documentElement.dataset.theme=dark?'dark':'light';try{localStorage.setItem('uml-viewer-theme',dark?'dark':'light');}catch{}});
   viewport.addEventListener('wheel',event=>{if(event.target.closest?.('.node-body'))return;event.preventDefault();const b=viewport.getBoundingClientRect();zoom(camera.zoom*Math.exp(-event.deltaY*.0014),event.clientX-b.left,event.clientY-b.top);},{passive:false});
   const pointers=new Map();let gesture=null,scroll=null,dragged=false;
+  editing=U.ArrangementControls.create({enabled:editable,scene:()=>scene,state:currentState,view:()=>view,document:()=>session?.data,camera:()=>({...camera}),render:()=>render(),fit,draw,error,inspect,highlight,restoreCamera:value=>{restoreCamera(value);fitted=false;transform();}});
   viewport.addEventListener('click',event=>{if(dragged){dragged=false;return;}if(!event.target.closest?.('button,.uml-node,.edge-group,.diagram-group'))clearConnectionFocus();});
   viewport.addEventListener('keydown',event=>{if(event.key==='Escape')clearConnectionFocus();});
   viewport.addEventListener('pointerdown',event=>{
-    if(event.button!==0)return;const body=event.target.closest?.('.node-body');if(body&&event.pointerType==='touch'){scroll={id:event.pointerId,body,y:event.clientY,top:body.scrollTop};return;}
+    if(event.defaultPrevented||event.button!==0)return;const body=event.target.closest?.('.node-body');if(body&&event.pointerType==='touch'){scroll={id:event.pointerId,body,y:event.clientY,top:body.scrollTop};return;}
     if(event.target.closest?.('button,.uml-node,.edge-group,.node-body'))return;
     dragged=false;viewport.setPointerCapture?.(event.pointerId);pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});startGesture();
   });
@@ -327,6 +347,6 @@
   viewport.addEventListener('keydown',event=>{if(event.target!==viewport)return;const moves={ArrowLeft:[35,0],ArrowRight:[-35,0],ArrowUp:[0,35],ArrowDown:[0,-35]};if(moves[event.key]){event.preventDefault();camera.x+=moves[event.key][0];camera.y+=moves[event.key][1];fitted=false;transform();}else if(['+','=','-','0','f','F'].includes(event.key)){event.preventDefault();if(['0','f','F'].includes(event.key))fit();else zoom(camera.zoom*(event.key==='-'?1/1.15:1.15));}});
   if(root.ResizeObserver)new root.ResizeObserver(()=>{if(scene&&mode==='diagram'&&fitted)fit(true);}).observe(viewport);
   for(const example of U.Examples||[]){const button=html('button','example-button');button.type='button';button.append(html('span','',glyphs[example.type]||'◇'),document.createTextNode(example.label));button.addEventListener('click',()=>selectExample(example.id));$('example-list').append(button);}
-  U.App={loadText,loadFile,loadProject,selectExample,selectView,toggle,setMode,focus,fit,zoom,selectObject,navigateTo,back,getState:()=>({document:session?.data,filename:session?.filename,raw:session?.raw,project:session?.project,view,scene,mode,camera:{...camera},selection,index:session?.index,historyLength:history.length,open:session&&view?new Map(currentState().open):new Map()})};
+  U.App={loadText,loadFile,loadProject,selectExample,selectView,toggle,setMode,focus,fit,zoom,selectObject,navigateTo,back,saveArrangement:()=>editing.saveRaw(),loadArrangement:raw=>editing.loadRaw(raw),undoLayout:()=>editing.undo(),redoLayout:()=>editing.redo(),getState:()=>({document:session?.data,filename:session?.filename,raw:session?.raw,project:session?.project,view,scene,mode,camera:{...camera},selection,index:session?.index,historyLength:history.length,open:session&&view?new Map(currentState().open):new Map()})};
   selectExample('bicycle-aggregation');
 })(globalThis);

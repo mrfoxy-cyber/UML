@@ -13,8 +13,9 @@
   }
   function node(node,context){
     const {presentation:p,item}=node,measure=context.measure;
-    const width=p.open?350:node.preferredWidth||(node.kind==='actor'?184:node.kind==='component'?280:224);
-    const titleLines=wrap(p.name,width-(node.kind==='actor'?130:node.kind==='component'?130:104),measure,14,600);
+    const compactWidth=['class','interface','enum'].includes(node.kind)?Math.max(224,Math.min(300,Math.ceil(measure(p.name,14,600)+128))):224;
+    const width=p.open?350:node.preferredWidth||(node.kind==='actor'?184:node.kind==='component'?280:compactWidth);
+    const titleLines=wrap(p.name,width-(node.kind==='actor'?130:node.kind==='component'?130:128),measure,14,600);
     if(['decision','merge'].includes(node.kind))return {...node,width:260,height:170,headerHeight:170,titleLines,rows:[]};
     if(['initial','final'].includes(node.kind)){const lines=wrap(p.name,width/2-32,measure,14,600),height=Math.max(64,lines.length*19+24);return {...node,width,height,headerHeight:height,titleLines:lines,rows:[]};}
     const rows=[];

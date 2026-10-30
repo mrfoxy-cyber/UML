@@ -17,8 +17,8 @@
   const tests={oneOf:[{type:'null'},{...array(ID,100),uniqueItems:true}]};
   const testCase=object({name:text(240),kind:{enum:['suite','unit','integration','workflow']},file:text(1000),symbol:text(1000),url:text(2000),notes:text(6000),useCases:references},['name']);
   const member=object({id:ID,kind:{enum:['operation','attribute']},name:text(1600),notes:text(6000),tests},['id','kind','name']);
-  const element=object({kind:{enum:ELEMENTS},name:text(240),members:array({oneOf:[text(1600),ref('member')]},200),references,notes:text(6000),display:ref('display'),tests},['kind','name']);
-  const group=object({id:ID,name:text(240),members:{...ids,minItems:1},notes:text(6000),display:ref('display')},['id','name','members']);
+  const element=object({kind:{enum:ELEMENTS},name:text(240),namespace:text(240),members:array({oneOf:[text(1600),ref('member')]},200),references,notes:text(6000),display:ref('display'),tests},['kind','name']);
+  const group=object({id:ID,name:text(240),kind:{enum:['group','namespace']},members:{...ids,minItems:1},notes:text(6000),display:ref('display')},['id','name','members']);
   const relation=object({id:ID,kind:{enum:RELATIONS},from:ID,to:ID,label:text(500),fromMultiplicity:text(40),toMultiplicity:text(40),tests},['id','kind','from','to']);
   const message=object({id:ID,kind:{enum:['call','reply']},from:ID,to:ID,label:text(1200),references,tests,role:{enum:['focus','context']},phase:{enum:['setup','action','assertion','context']},detailView:ID},['id','kind','from','to','label']);
   const alternative=object({id:ID,kind:{const:'alt'},name:text(240),display:ref('display'),branches:array(object({guard:text(500),steps:array(ref('step'),600)},['guard','steps']),8,2)},['id','kind','branches']);

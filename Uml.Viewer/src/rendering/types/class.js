@@ -28,20 +28,22 @@
     return scene;
   }
   U.Renderers.register('class',{async build(document,view,context){
-    const data=U.Model.structural(document,view,context.state);
+    const data=U.Containers.prepare(document,view,context.state);
     const connections=data.edges.slice(),shortcuts=context.state.interfacesAsLines?[]:interfaceShortcuts(data,document);
-    const grouped=context.state.groupLayout!==false;
+    const algorithm=context.state.layoutAlgorithm||'elk',grouped=context.state.groupLayout!==false;
     let shelf=[];
     if(!grouped){
       const groups=new Map(data.groups.map(group=>[group.id,group]));
-      data.nodes=data.nodes.map(node=>({...node,namespace:groups.get(node.groupId)?.item.name,groupId:null}));data.groups=[];
+      data.nodes=data.nodes.map(node=>({...node,namespace:groups.get(node.groupId)?.item.name,sourceGroupId:node.groupId,groupId:null}));data.groups=[];
       const connected=new Set(data.edges.flatMap(edge=>[edge.source,edge.target]));
       shelf=data.nodes.filter(node=>node.kind==='interface'&&!connected.has(node.id)&&node.shortcutLinks?.length);
       const shelfIds=new Set(shelf.map(node=>node.id));data.nodes=data.nodes.filter(node=>!shelfIds.has(node.id));
     }
     const hierarchy=data.edges.some(edge=>['inheritance','implementation'].includes(edge.kind));
-    const direction=hierarchy||context.viewport.width<context.viewport.height?'DOWN':'RIGHT';
-    const scene=addInterfaceShelf(await U.GraphLayout(data,context,{direction,inheritanceUp:true,nodeGap:52,layerGap:86,simplify:true}),shelf,context);
+    const direction=context.state.layoutDirection||(hierarchy||context.viewport.width<context.viewport.height?'DOWN':'RIGHT');
+    let placement=grouped?await U.ContainerLayout.layout(data,context,algorithm):algorithm!=='elk'?U.StructuredLayout.layout(data,context,algorithm):null;
+    if(!placement){placement=await U.GraphLayout(data,context,{direction,inheritanceUp:true,nodeGap:52,layerGap:86,simplify:true});placement.layoutInfo={applied:'elk',basis:'all visible connections',fallback:algorithm!=='elk'?'The selected graph is not supported by this structured layout. Using hierarchical placement.':null};}
+    const scene=addInterfaceShelf(placement,shelf,context);scene.layoutInfo.requested=algorithm;scene.coordinated=true;scene.routingMode=context.state.routingMode||'bundled';U.EdgeRouter.scene(scene);
     return {...scene,connections,interfaceLinks:shortcuts,caption:'Select a class to focus its immediate connections. Interface shortcuts jump to the contract; reciprocal shortcuts return to implementing classes. Full interface lines and group frames are available above.',legend:[['inheritance','Inherits'],['implementation',shortcuts.length?'Interface shortcut (navigation)':'Implements'],['dependency','Depends on'],['association','Association']]};
   }});
 })(globalThis);

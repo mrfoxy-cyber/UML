@@ -6,15 +6,28 @@
   <meta name="color-scheme" content="light dark">
   <title>UML Studio — JSON viewer</title>
   <link rel="stylesheet" href="themes/default.css">
+  <link rel="stylesheet" href="themes/connections.css">
   <script defer src="vendor/elk.bundled.js"></script>
   <script defer src="src/validation/contract.js"></script>
   <script defer src="src/model/model.js"></script>
+  <script defer src="src/model/containers.js"></script>
   <script defer src="src/model/connectivity.js"></script>
   <script defer src="src/model/project.js"></script>
+  <script defer src="src/model/arrangement.js"></script>
   <script defer src="src/rendering/registry.js"></script>
   <script defer src="src/rendering/core/measure.js"></script>
   <script defer src="src/layout/routes.js"></script>
+  <script defer src="src/layout/edge-router.js"></script>
+  <script defer src="src/layout/structured.js"></script>
   <script defer src="src/layout/graph.js"></script>
+  <script defer src="src/layout/containers.js"></script>
+  <script defer src="src/layout/routing/families.js"></script>
+  <script defer src="src/layout/routing/cables.js"></script>
+  <script defer src="src/layout/routing/ports.js"></script>
+  <script defer src="src/layout/routing/channels.js"></script>
+  <script defer src="src/layout/routing/labels.js"></script>
+  <script defer src="src/layout/routing/segments.js"></script>
+  <script defer src="src/layout/routing/router.js"></script>
   <script defer src="src/rendering/types/class.js"></script>
   <script defer src="src/rendering/types/aggregation.js"></script>
   <script defer src="src/rendering/types/component.js"></script>
@@ -22,7 +35,10 @@
   <script defer src="src/rendering/types/communication.js"></script>
   <script defer src="src/rendering/types/activity.js"></script>
   <script defer src="src/rendering/core/painter.js"></script>
+  <script defer src="src/rendering/core/connections.js"></script>
   <script defer src="examples/examples.generated.js"></script>
+  <script defer src="src/ui/arrangement-drag.js"></script>
+  <script defer src="src/ui/arrangement-controls.js"></script>
   <script defer src="src/ui/app.js"></script>
 </head>
 <body>
@@ -31,6 +47,7 @@
     <div class="header-actions"><span class="privacy"><i></i>Local &amp; private</span><button id="theme-button" class="icon-button" type="button" aria-label="Switch color theme">◐</button><button id="project-button" class="secondary-button" type="button">Open project</button><button id="open-button" class="primary-button" type="button"><span aria-hidden="true">↗</span> Open JSON</button></div>
     <input id="file-input" type="file" accept=".json,application/json" hidden>
     <input id="project-input" type="file" webkitdirectory multiple hidden aria-label="Choose UML project folder">
+    <input id="arrangement-file" type="file" accept=".json,application/json" hidden aria-label="Choose diagram arrangement">
   </header>
   <div class="app-shell">
     <aside class="sidebar" aria-label="Document and diagram navigation">
@@ -49,7 +66,8 @@
       <section id="workbench" class="workbench" aria-label="Diagram viewer">
         <div class="workbench-toolbar"><div class="view-mode" role="group" aria-label="Presentation"><button id="diagram-tab" type="button" aria-pressed="true">Diagram</button><button id="json-tab" type="button" aria-pressed="false">JSON source</button></div><span id="element-count" class="element-count"></span><div class="toolbar-actions"><button id="context-button" class="toolbar-button" type="button" aria-pressed="true" hidden>Context: shown</button><button id="tests-button" class="toolbar-button" type="button" aria-label="Show connected diagram and flow tests">Tests · 0</button><button id="reset-button" class="toolbar-button" type="button">Reset</button><button id="fullscreen-button" class="toolbar-button" type="button" aria-label="Toggle fullscreen">⛶</button><button id="download-button" class="toolbar-button" type="button" aria-label="Download the loaded JSON">↓ JSON</button></div></div>
         <div id="search-toolbar" class="search-toolbar"><button id="back-button" class="secondary-button" type="button" disabled>← Back</button><label class="search-field"><span aria-hidden="true">⌕</span><input id="element-search" type="search" placeholder="Find an element or method…" aria-label="Find an element"><kbd>↵</kbd></label><span class="search-hint">Click ↗ to find the same object in other views</span></div>
-        <div id="class-controls" class="class-controls" hidden aria-label="Class diagram presentation"><button id="interface-mode" type="button" class="toolbar-button" aria-pressed="true">Interfaces: shortcuts</button><button id="class-layout" type="button" class="toolbar-button" aria-pressed="false">Layout: connections</button><span id="connection-focus-label" class="connection-focus-label">Select a class to focus its connections</span><button id="clear-connection-focus" type="button" class="toolbar-button" hidden>Clear focus ×</button></div>
+        <div id="class-controls" class="class-controls" hidden aria-label="Class diagram presentation"><label class="layout-choice">Layout <select id="layout-engine" aria-label="Layout algorithm"><option value="inheritance">Inheritance · ours</option><option value="series-parallel">Series-parallel · ours</option><option value="elk">Hierarchical · ELK</option></select></label><label class="layout-choice">Direction <select id="layout-direction" aria-label="Layout direction"><option value="DOWN">Top to bottom</option><option value="RIGHT">Left to right</option></select></label><button id="interface-mode" type="button" class="toolbar-button" aria-pressed="true">Interfaces: shortcuts</button><button id="class-layout" type="button" class="toolbar-button" aria-pressed="false">Grouping: labels</button><button id="routing-mode" type="button" class="toolbar-button" aria-pressed="true">Connections: bundled</button><span id="connection-focus-label" class="connection-focus-label">Select a class to focus its connections</span><button id="clear-connection-focus" type="button" class="toolbar-button" hidden>Clear focus ×</button></div>
+        <div id="arrangement-controls" class="arrangement-controls" hidden aria-label="Arrange and save diagram"><button id="save-arrangement" class="toolbar-button" type="button">Save arrangement ↓</button><button id="load-arrangement" class="toolbar-button" type="button">Load arrangement</button><span class="toolbar-separator"></span><button id="undo-layout" class="toolbar-button" type="button" disabled>↶ Undo</button><button id="redo-layout" class="toolbar-button" type="button" disabled>↷ Redo</button><button id="auto-arrange" class="toolbar-button" type="button">Auto-arrange</button><button id="reset-layout" class="toolbar-button" type="button">Reset layout</button><span id="arrangement-status" class="arrangement-status" role="status" aria-live="polite">Drag the ⠿ handles to arrange</span></div>
         <div id="viewport" class="viewport" tabindex="0" role="region" aria-label="Interactive diagram. Drag background to pan. Use plus or minus to zoom, and zero to fit.">
           <div id="world" class="world"><div id="groups-layer"></div><svg id="edges-layer" xmlns="http://www.w3.org/2000/svg" class="edges-layer"></svg><div id="nodes-layer"></div></div>
           <div id="layout-status" class="layout-status" role="status" aria-live="polite">Preparing your diagram…</div>

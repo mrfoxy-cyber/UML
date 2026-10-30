@@ -8,6 +8,8 @@ See [Connected views](CONNECTED-VIEWS.md) for identified operations, `references
 
 ## Document and views
 
+Elements may include `"namespace": "Garage.Vehicles"`. In structural container mode, ungrouped elements with the same namespace appear inside one labelled frame. Namespace names are explicit facts; the viewer does not derive them from class names. Existing groups retain their membership and may declare `"kind": "namespace"` to record namespace intent, or `"kind": "group"` for an ordinary visual group. Explicit group membership takes precedence over automatic namespace frames. Unassigned objects appear under **Unassigned / global**. Namespace frames are flat. Container geometry, collapse state and bundled/separate routing belong to the companion arrangement, not the semantic document. See [the working namespace example](examples/namespace-routing.uml.json).
+
 Required fields are `version: 1`, `id`, `title`, `elements` and non-empty `views`. Optional sections are `tests`, `groups`, `relationships`, `interactions` and `activities`. IDs begin with a letter, followed by letters, digits, periods, underscores or hyphens. Unknown fields, duplicate JSON properties and unresolved references fail with an error location.
 
 Every view has a unique `id`, `title` and `type`. Class, aggregation and component views select an `elements` array. Sequence and communication views reference an `interaction` ID. Activity views reference an `activity` ID. Other diagram types are recognized but unsupported in this release. A failed import keeps the last valid document visible.

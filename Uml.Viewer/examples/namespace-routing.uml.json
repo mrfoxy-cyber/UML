@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "id": "namespace-routing",
+  "title": "Namespaces & shared paths",
+  "elements": {
+    "road": {"kind":"class","name":"RoadVehicle (abstract)","namespace":"Garage.Vehicles","display":{"collapsed":{"show":["name","kind"]}}},
+    "truck": {"kind":"class","name":"Truck","namespace":"Garage.Vehicles","display":{"collapsed":{"show":["name","kind"]}}},
+    "car": {"kind":"class","name":"Car","namespace":"Garage.Vehicles","display":{"collapsed":{"show":["name","kind"]}}},
+    "bus": {"kind":"class","name":"Bus","namespace":"Garage.Vehicles","display":{"collapsed":{"show":["name","kind"]}}},
+    "truck-spec": {"kind":"class","name":"TruckSpecification","namespace":"Garage.Vehicles.Specifications","display":{"collapsed":{"show":["name","kind"]}}},
+    "car-spec": {"kind":"class","name":"CarSpecification","namespace":"Garage.Vehicles.Specifications","display":{"collapsed":{"show":["name","kind"]}}},
+    "bus-spec": {"kind":"class","name":"BusSpecification","namespace":"Garage.Vehicles.Specifications","display":{"collapsed":{"show":["name","kind"]}}},
+    "color": {"kind":"enum","name":"VehicleColor","namespace":"Garage.Vehicles.Types","display":{"collapsed":{"show":["name","kind"]}}}
+  },
+  "relationships": [
+    {"id":"truck-inherits","kind":"inheritance","from":"truck","to":"road"},
+    {"id":"car-inherits","kind":"inheritance","from":"car","to":"road"},
+    {"id":"bus-inherits","kind":"inheritance","from":"bus","to":"road"},
+    {"id":"truck-specification","kind":"association","from":"truck","to":"truck-spec"},
+    {"id":"car-active-specification","kind":"association","from":"car","to":"car-spec","label":"activeSpecification"},
+    {"id":"car-saved-specification","kind":"association","from":"car","to":"car-spec","label":"savedSpecification"},
+    {"id":"bus-specification","kind":"association","from":"bus","to":"bus-spec"},
+    {"id":"truck-color","kind":"dependency","from":"truck","to":"color"},
+    {"id":"car-color","kind":"dependency","from":"car","to":"color"}
+  ],
+  "views": [{"id":"vehicle-namespaces","type":"class","title":"Vehicles inside their namespaces","elements":["road","truck","car","bus","truck-spec","car-spec","bus-spec","color"]}]
+}
